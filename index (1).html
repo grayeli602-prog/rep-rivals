@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1b1440">
+<title>Rep Rivals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#130e2e; --bg2:#1d1645; --panel:#2a2160; --panel2:#3a2f7a; --edge:#0f0b26;
+  --text:#f3f1ff; --muted:#b2a9e0; --mint:#5fe0a0; --orange:#ec6440; --orangeD:#b0401f; --gold:#f5b85a; --sky:#8fd9ff; --red:#e8573a;
+  --navh:calc(58px + max(6px, env(safe-area-inset-bottom) - 14px));
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;position:fixed;inset:0;height:100%;width:100%;background:var(--bg);color:var(--text);font-family:Rubik,system-ui,sans-serif;overscroll-behavior:none;overflow:hidden;touch-action:manipulation}
+button{font-family:inherit;border:0;cursor:pointer;color:inherit;background:none;padding:0}
+.hidden{display:none!important}
+.screen{position:fixed;left:0;right:0;top:0;bottom:var(--navh);overflow-y:auto;overscroll-behavior:none}
+#boss{overflow:hidden;touch-action:none}
+.wrap{max-width:520px;margin:0 auto;position:relative}
+
+/* ---------- shared bits ---------- */
+.gempill{display:flex;align-items:center;gap:8px;background:var(--bg2);border:4px solid var(--edge);border-radius:999px;padding:6px 16px 6px 12px;font-weight:800;font-size:20px;letter-spacing:2px;color:var(--sky)}
+.gempill svg{width:22px;height:22px}
+.gempill.bump{animation:bump .35s}
+@keyframes bump{40%{transform:scale(1.18)}}
+.hp{position:relative;height:30px;background:var(--edge);border-radius:999px;border:4px solid var(--edge);overflow:hidden}
+.hp>i{position:absolute;left:0;top:0;bottom:0;background:var(--red);border-radius:999px;transition:width .3s}
+.hp>i.ghost{background:#fff8;transition:width .9s .25s}
+.hp>span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;letter-spacing:3px;color:#fff}
+.dot{position:absolute;width:20px;height:20px;border-radius:50%;background:var(--red);border:4px solid var(--edge)}
+.title{font-weight:900;letter-spacing:6px;font-size:30px;text-align:center}
+.roundbtn{width:58px;height:58px;border-radius:50%;background:var(--panel);border:5px solid var(--edge);display:flex;align-items:center;justify-content:center}
+.roundbtn svg{width:26px;height:26px}
+
+/* ---------- nav ---------- */
+nav{position:fixed;left:0;right:0;bottom:0;height:var(--navh);background:var(--bg);display:flex;justify-content:center;padding-top:6px;z-index:10;touch-action:none;border-top:2px solid #241b52}
+nav .in{display:flex;width:100%;max-width:520px;justify-content:space-around}
+nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:800;font-size:13px;letter-spacing:1px;color:var(--muted);position:relative}
+nav .ic{width:60px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center}
+nav .ic svg{width:22px;height:22px}
+nav button.on{color:#fff}
+nav button.on .ic{background:#5a2433}
+nav button.on .ic svg{color:var(--gold)}
+nav .dot{top:-4px;right:8px;width:16px;height:16px;border-width:3px}
+
+/* ---------- boss screen ---------- */
+#boss{overflow:hidden}
+#boss .land{position:absolute;inset:0}
+#boss .land svg{width:100%;height:100%}
+.bossui{position:relative;height:100%;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 10px) 14px 14px;max-width:520px;margin:0 auto}
+.topbar{display:flex;align-items:center;justify-content:space-between}
+.topbar .title{font-size:26px;white-space:nowrap;letter-spacing:4px;color:#fff;text-shadow:0 2px 0 #0002}
+.bname{font-weight:900;letter-spacing:5px;font-size:34px;text-align:center;margin-top:12px;color:#fff}
+.worth{align-self:center;display:flex;gap:8px;align-items:center;background:var(--bg2);border:4px solid var(--edge);border-radius:999px;padding:6px 18px;font-weight:800;color:var(--gold);letter-spacing:3px;font-size:15px;margin-top:6px}
+.worth svg{width:18px;height:18px}
+.stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0}
+.stage .creature{width:min(70%,320px);max-height:100%;animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-10px) rotate(-1.5deg)}}
+.stage .arrow{position:absolute;top:30%}
+.stage .arrow.l{left:0}.stage .arrow.r{right:0}
+.defeatedtag{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%) rotate(-8deg);border:5px solid var(--mint);color:var(--mint);font-weight:900;letter-spacing:4px;font-size:30px;padding:6px 16px;border-radius:12px;background:#0006}
+.buildings{display:flex;justify-content:space-around;align-items:flex-end;margin-top:-10px}
+.bld{position:relative;width:46%;display:flex;flex-direction:column;align-items:center}
+.bld .badge{width:52px;height:52px;border-radius:50%;background:var(--bg2);border:5px solid var(--edge);display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+.bld .badge svg{width:30px;height:30px}
+.bld .art{width:100%}
+.bld .art svg{width:100%;height:auto;display:block}
+.bld .lv{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:var(--edge);color:var(--gold);font-weight:800;font-size:12px;letter-spacing:2px;padding:3px 10px;border-radius:999px}
+.bld .dot{right:16%;bottom:18%}
+.fightrow{display:flex;gap:12px;align-items:stretch;margin-top:8px}
+.fightbtn{flex:1;background:var(--orange);border:6px solid var(--edge);border-radius:999px;font-size:38px;font-weight:900;letter-spacing:8px;color:#fff;padding:14px 0;box-shadow:inset 0 -8px 0 #0002}
+.fightbtn:active{transform:scale(.97)}
+.battery{position:relative;width:118px;background:var(--edge);border-radius:22px 22px 0 0;overflow:visible;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 0}
+.battery .h{display:flex;gap:6px;align-items:center;background:var(--panel2);align-self:stretch;margin:0 6px;border-radius:16px 16px 0 0;justify-content:center;font-weight:800;letter-spacing:2px;font-size:13px;padding:6px 0}
+.battery .h svg{width:12px;height:18px}
+.battery b{color:var(--orange);font-size:24px;font-weight:900;letter-spacing:2px;margin-top:6px}
+.battery small{color:var(--muted);font-weight:700;letter-spacing:1px}
+.battery.full b{color:var(--mint)}
+.battery .dot{top:-10px;right:-8px}
+
+/* ---------- sword screen ---------- */
+.phead{background:linear-gradient(#3d2a6e,#2f2462);padding:calc(env(safe-area-inset-top) + 14px) 14px 18px;position:sticky;top:0;z-index:2}
+.phead .row{display:flex;align-items:center;justify-content:center;position:relative;max-width:520px;margin:0 auto}
+.phead .gempill{position:absolute;right:0}
+.sbody{background:linear-gradient(#2b2160,#1d1645);min-height:100%;padding:18px 16px 30px}
+.bigsword{width:min(62%,250px);aspect-ratio:1;margin:6px auto 0;background:var(--edge);border-radius:36px;display:flex;align-items:center;justify-content:center;border:4px solid #241b52}
+.bigsword svg{width:78%;height:78%}
+.swname{text-align:center;font-weight:900;letter-spacing:5px;font-size:34px;margin-top:20px}
+.swdmg{text-align:center;color:var(--gold);font-weight:800;letter-spacing:3px;font-size:20px;margin-top:4px}
+.next{border:6px solid var(--edge);border-radius:30px;padding:18px;margin-top:24px;background:#2a2160}
+.next .lbl{text-align:center;font-weight:800;letter-spacing:4px;font-size:18px}
+.next .mid{display:flex;align-items:center;margin-top:12px}
+.next .sw{width:40%;text-align:center}
+.next .sw svg{width:76px;height:96px}
+.next .sw div{font-weight:800;letter-spacing:3px;font-size:16px;margin-top:4px}
+.next .stat{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:900;font-size:36px}
+.next .stat svg{width:30px;height:30px}
+.next .bot{display:flex;align-items:center;gap:14px;margin-top:16px}
+.prog{flex:1;height:30px;background:var(--edge);border-radius:999px;border:4px solid var(--edge);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--mint);border-radius:999px;transition:width .4s}
+.buybtn{position:relative;background:var(--gold);color:#fff;font-weight:900;letter-spacing:4px;font-size:26px;padding:14px 26px;border-radius:999px;border:6px solid var(--edge)}
+.buybtn.off{opacity:.55}
+.buybtn .lk{position:absolute;top:-12px;right:-4px;width:24px;height:24px;color:var(--gold)}
+.h2{font-weight:800;letter-spacing:4px;font-size:18px;margin:28px 4px 14px}
+.blade{display:flex;align-items:center;gap:14px;border:5px solid var(--edge);border-radius:24px;padding:16px 18px;margin-bottom:12px;background:#271e5a}
+.blade svg.i{width:28px;height:28px;flex:none}
+.blade .nm{flex:1;font-weight:700;font-size:20px;letter-spacing:1px}
+.blade .ct{font-weight:800;letter-spacing:2px;color:var(--sky);font-size:17px}
+.blade .dm{font-weight:800;letter-spacing:2px;font-size:17px;min-width:92px;text-align:right}
+.blade.cur{border-color:#8fb877;background:#3a3075}
+.blade.cur .nm{font-weight:900}
+.blade.lock .nm{color:#c9c2ee}
+
+/* ---------- progress screen ---------- */
+.tabs{display:flex;justify-content:space-around;border-bottom:3px solid #fff;margin:0 -14px;padding:0 14px;max-width:none}
+.tabs button{font-weight:800;letter-spacing:2px;font-size:13px;color:var(--muted);padding:14px 4px 12px;position:relative}
+.tabs button.on{color:var(--gold)}
+.tabs button.on:after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:7px;background:var(--gold);border-radius:6px 6px 0 0}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tile{min-width:0;border:6px solid var(--edge);border-radius:26px;background:#2a2160;aspect-ratio:.92;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;gap:8px}
+.tile .pic{width:100%;flex:1;border-radius:18px;overflow:hidden;position:relative}
+.tile .pic svg{position:absolute;inset:0;width:100%;height:100%}
+.tile .pic .c{inset:12% 18% 8%;width:64%;height:80%}
+.tile .nm{font-weight:800;letter-spacing:1px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:#ddd8f6}
+.tile.cur .nm{color:var(--mint)}
+.tile .lockic{flex:1;display:flex;align-items:center}
+.tile .lockic svg{width:42px;height:42px;color:#bdb4ea}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.cal div{aspect-ratio:1;border-radius:14px;background:#271e5a;border:3px solid var(--edge);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;color:var(--muted);font-size:12px}
+.cal div b{color:#fff;font-size:15px;font-weight:900}
+.cal .dw{background:none;border:0;aspect-ratio:auto;letter-spacing:2px}
+.cal .hit{background:#2f7a5a;color:#d6ffe9}
+.cal .today{border-color:var(--gold)}
+.cal .fut{opacity:.35}
+.calhead{display:flex;justify-content:space-between;align-items:center;margin:4px 4px 14px;font-weight:900;letter-spacing:3px;font-size:18px}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.cards3 div{background:var(--edge);border-radius:18px;padding:12px 6px;text-align:center}
+.cards3 b{display:block;font-size:26px;font-weight:900}
+.cards3 span{font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:800}
+.vs{display:flex;align-items:center;gap:10px;background:var(--edge);border-radius:24px;padding:16px;margin-bottom:16px}
+.vs .p{flex:1;text-align:center}
+.vs .p b{display:block;font-size:44px;font-weight:900}
+.vs .p span{font-weight:800;letter-spacing:2px;font-size:14px;color:var(--muted)}
+.vs .p.win b{color:var(--gold)}
+.vs .x{font-weight:900;color:var(--orange);font-size:22px;letter-spacing:2px}
+table{width:100%;border-collapse:collapse}
+th{font-size:12px;letter-spacing:2px;color:var(--muted);text-align:right;padding:10px 8px;font-weight:800}
+th:first-child,td:first-child{text-align:left}
+td{padding:14px 8px;text-align:right;font-weight:800;border-top:3px solid var(--edge);font-size:17px}
+td.me{color:var(--mint)}
+td.lead{color:var(--gold)}
+.note{font-size:14px;color:var(--muted);line-height:1.45;font-weight:500}
+.box{background:#271e5a;border:5px solid var(--edge);border-radius:24px;padding:8px 12px}
+
+/* ---------- fight ---------- */
+#fight{position:fixed;inset:0;touch-action:none;background:var(--bg);z-index:30;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#fight .fin{flex:1;display:flex;flex-direction:column;max-width:520px;width:100%;margin:0 auto;padding:0 14px;min-height:0}
+.fhead{display:flex;align-items:center;justify-content:space-between;padding:18px 4px 16px}
+.fhead .n{font-weight:900;letter-spacing:3px;font-size:19px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fhead .t{font-weight:900;letter-spacing:3px;font-size:19px;margin:0 18px}
+.fhead .leave{color:var(--orange);font-weight:900;letter-spacing:3px;font-size:18px;flex:none}
+.arena{position:relative;border-radius:26px;overflow:hidden;border:4px solid #241b52;height:30vh;min-height:180px}
+.arena .bg,.arena .bg svg{position:absolute;inset:0;width:100%;height:100%}
+.arena .creature{position:absolute;left:50%;top:44%;height:62%;transform:translate(-50%,-50%);animation:bob2 3s ease-in-out infinite}
+@keyframes bob2{50%{transform:translate(-50%,calc(-50% - 6px))}}
+.arena .creature.hit{animation:hit .3s}
+@keyframes hit{0%{transform:translate(-50%,-50%)}25%{transform:translate(calc(-50% + 10px),-50%) scale(.94);filter:brightness(0) invert(1)}60%{transform:translate(calc(-50% - 6px),-50%)}100%{transform:translate(-50%,-50%)}}
+.arena .creature.die{animation:die .7s forwards}
+@keyframes die{0%{filter:brightness(0) invert(1)}100%{transform:translate(-50%,-30%) scale(.2) rotate(30deg);opacity:0}}
+.arena .creature.enter{animation:enter .5s}
+@keyframes enter{from{transform:translate(60%,-50%);opacity:0}}
+.arena .hp{position:absolute;left:16px;right:16px;bottom:14px}
+.slash{position:absolute;left:20%;top:20%;width:60%;height:50%;pointer-events:none}
+.slash path{stroke:#fff;stroke-width:10;stroke-linecap:round;fill:none;stroke-dasharray:300;stroke-dashoffset:300;animation:sl .28s forwards}
+@keyframes sl{60%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+.dmgpop{position:absolute;font-weight:900;font-size:34px;color:#fff;-webkit-text-stroke:2px var(--edge);pointer-events:none;animation:pop .8s forwards}
+.dmgpop.crit{color:var(--gold);font-size:44px}
+@keyframes pop{0%{transform:scale(.4)}20%{transform:scale(1.15)}100%{transform:translateY(-70px);opacity:0}}
+.banner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0008;animation:fade 1.6s forwards;pointer-events:none}
+.banner b{font-size:40px;font-weight:900;letter-spacing:6px;color:var(--gold);-webkit-text-stroke:2px var(--edge)}
+.banner span{font-weight:900;font-size:24px;color:var(--sky);letter-spacing:3px}
+@keyframes fade{0%{opacity:0;transform:scale(1.3)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+.mid{flex:1;display:flex;gap:14px;margin:18px 0;min-height:0}
+.col{width:44px;display:flex;flex-direction:column;align-items:center}
+.col .lbl{font-weight:900;color:var(--orange);font-size:14px;letter-spacing:2px;white-space:nowrap;display:flex;gap:4px;align-items:center;margin-bottom:10px}
+.col .lbl svg{width:10px;height:18px}
+.vbar{flex:1;width:30px;border:5px solid #4a3f8a;border-radius:999px;position:relative;overflow:hidden}
+.vbar i{position:absolute;left:0;right:0;bottom:0;background:var(--mint);border-radius:999px;transition:height .1s}
+.vbar.batt i{background:var(--orange);transition:height .4s}
+.swmeter{width:40px;display:flex;flex-direction:column;align-items:center}
+.swmeter svg.top{width:44px;height:84px;margin-bottom:-6px;position:relative;z-index:1}
+.swmeter .track{flex:1;width:34px;background:#1a1440;border-radius:0 0 999px 999px;position:relative;overflow:hidden}
+.swmeter .track i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(var(--mint),#2fa874);transition:height .08s}
+.swmeter .track .tick{position:absolute;left:10px;right:10px;height:3px;background:#4a3f8a;border-radius:3px}
+.swmeter.go .track i{background:var(--gold)}
+.cam{flex:1;position:relative;border-radius:30px;overflow:hidden;background:#000}
+.cam video,.cam canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.status{position:absolute;left:10px;right:10px;top:14px;text-align:center;font-weight:900;letter-spacing:1px;font-size:17px;text-shadow:0 2px 6px #000}
+.count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;font-weight:900;text-shadow:0 4px 24px #000;-webkit-text-stroke:3px var(--edge)}
+.count.go{color:var(--gold)}
+.combo{position:absolute;right:12px;bottom:12px;background:#000a;border-radius:14px;padding:6px 12px;font-weight:900;color:var(--gold);letter-spacing:2px}
+.fstats{display:flex;background:#3a2f7a;padding:22px 0 18px;margin:0 -14px}
+.fstats div{flex:1;text-align:center}
+.fstats b{display:block;font-size:46px;font-weight:900;line-height:1}
+.fstats span{font-weight:800;letter-spacing:4px;font-size:15px;color:#cfc8f2}
+
+.planettag{align-self:center;margin-top:10px;background:#0006;color:var(--gold);font-weight:800;letter-spacing:4px;font-size:13px;padding:5px 14px;border-radius:999px}
+.planetpic{position:relative;height:190px;border-radius:22px;overflow:hidden;margin:14px 0;border:5px solid var(--edge);animation:zoom 1.2s ease-out}
+.planetpic svg{position:absolute;inset:0;width:100%;height:100%}
+.planetpic .c{position:absolute;left:25%;top:12%;width:50%;height:80%;animation:bob 3s ease-in-out infinite}
+.pname{font-size:38px;font-weight:900;letter-spacing:6px;color:var(--gold);margin:2px 0 8px;animation:glow 1.5s ease-in-out infinite alternate}
+@keyframes zoom{from{transform:scale(1.4);filter:brightness(3)}}
+@keyframes glow{to{text-shadow:0 0 18px #f5b85a}}
+/* ---------- meta: level, quests, shop ---------- */
+.lvrow{display:flex;align-items:center;gap:10px;margin-top:10px}
+.lvchip{flex:1;display:flex;align-items:center;gap:8px;background:var(--bg2);border:4px solid var(--edge);border-radius:999px;padding:3px 12px 3px 3px}
+.lvchip b{background:var(--gold);color:#3b2400;border-radius:999px;padding:3px 10px;font-weight:900;font-size:13px;letter-spacing:1px;white-space:nowrap}
+.xpbar{flex:1;height:10px;background:var(--edge);border-radius:999px;overflow:hidden}.xpbar i{display:block;height:100%;background:var(--sky);transition:width .4s}
+.qbtn{position:relative;background:var(--bg2);border:4px solid var(--edge);border-radius:999px;padding:7px 14px;font-weight:900;letter-spacing:2px;font-size:13px;color:var(--gold);white-space:nowrap}
+.qbtn .dot{top:-9px;right:-7px;width:18px;height:18px}
+.item{display:flex;align-items:center;gap:12px;border:5px solid var(--edge);border-radius:22px;padding:12px 14px;margin-bottom:12px;background:#271e5a}
+.item .art{width:60px;height:60px;flex:none;display:flex;align-items:center;justify-content:center}
+.item .art svg{width:100%;height:100%}
+.item .m{flex:1;min-width:0}
+.item .t{font-weight:900;font-size:17px;letter-spacing:1px}
+.item .d{font-size:13px;color:var(--muted);font-weight:600;margin-top:2px}
+.item.dim{opacity:.55}
+.sbtn{background:var(--gold);color:#3b2400;font-weight:900;padding:10px 14px;border-radius:999px;border:4px solid var(--edge);font-size:14px;white-space:nowrap;letter-spacing:1px}
+.sbtn.off{opacity:.45}.sbtn.mint{background:var(--mint);color:#0d3524}.sbtn.or{background:var(--orange);color:#fff}
+.bar{height:10px;background:var(--edge);border-radius:999px;overflow:hidden;margin-top:7px}.bar i{display:block;height:100%;background:var(--mint)}
+.chest{border:6px solid var(--edge);border-radius:28px;padding:16px;background:#2a2160;margin-bottom:16px;text-align:center}
+.chest .ct{font-weight:900;letter-spacing:4px;font-size:20px}
+.chest .cs{color:var(--muted);font-weight:700;font-size:13px;letter-spacing:1px;margin-top:2px}
+.chest>svg{width:120px;height:100px;margin:6px auto 0;display:block}
+.setgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:12px 0}
+.setgrid div{aspect-ratio:1;border-radius:12px;background:var(--edge);display:flex;align-items:center;justify-content:center;border:3px solid #3a2f7a;font-weight:900;color:#4a3f8a;overflow:hidden}
+.setgrid div svg{width:85%;height:85%}
+.chest .btns{display:flex;gap:10px;justify-content:center}
+.keys{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:900;letter-spacing:2px;color:var(--gold);margin-bottom:14px}
+.lsec{font-weight:800;letter-spacing:3px;font-size:14px;color:var(--muted);margin:18px 4px 10px}
+.lgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.lgrid button{border:4px solid var(--edge);border-radius:18px;background:#271e5a;padding:8px 6px;text-align:center;font-weight:800;font-size:12px;min-width:0}
+.lgrid button .pv{height:56px;display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+.lgrid button .pv svg{height:100%}
+.lgrid button.on{border-color:var(--mint);background:#2f3f6a}
+.lgrid button span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r-common{color:#c8c3e6}.r-rare{color:#7ab8ff}.r-legendary{color:#ffd24a}
+.legend{animation:legend 1.6s ease-in-out infinite alternate}
+@keyframes legend{from{filter:drop-shadow(0 0 4px #ffd24a)}to{filter:drop-shadow(0 0 16px #ff7bd0)}}
+.race{background:var(--edge);border-radius:24px;padding:16px;margin-bottom:16px}
+.race .rt{display:flex;justify-content:space-between;font-weight:900;letter-spacing:2px;font-size:14px}
+.race .rt span{color:var(--muted);font-size:12px}
+.lane{display:flex;align-items:center;gap:10px;margin-top:12px;font-weight:800}
+.lane .nm{width:72px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lane .tr{flex:1;height:22px;background:#2a2160;border-radius:999px;overflow:hidden}
+.lane .tr i{display:block;height:100%;border-radius:999px;transition:width .6s}
+.lane b{width:52px;text-align:right}
+.feed div{padding:11px 4px;border-top:3px solid var(--edge);font-weight:600;font-size:14px;line-height:1.35}
+.feed div:first-child{border-top:0}
+.feed small{color:var(--muted);font-size:12px;margin-left:6px}
+.pets{position:absolute;left:12px;bottom:52px;display:flex;gap:4px}
+.pets svg{width:40px;height:40px}
+.pets .hop{animation:hop .35s}
+@keyframes hop{50%{transform:translateY(-14px) rotate(-8deg)}}
+.stars{color:var(--gold);letter-spacing:1px;font-size:13px}
+.qhead{display:flex;justify-content:center;gap:18px;margin:10px 0 6px;font-weight:900;letter-spacing:2px}
+.qhead span{color:var(--muted);font-size:12px;display:block}
+.sheet .item{text-align:left}
+.sheet{max-height:86vh;overflow-y:auto;overscroll-behavior:contain}
+.reveal svg.big{width:150px;height:150px}
+.chestanim{animation:cshake .5s 2}
+@keyframes cshake{25%{transform:rotate(-8deg) scale(1.05)}75%{transform:rotate(8deg) scale(1.05)}}
+.burst{position:relative}
+.burst:before{content:"";position:absolute;inset:-30px;background:radial-gradient(circle,var(--rc,#fff8) 0,transparent 65%);animation:fade 1.4s forwards;pointer-events:none}
+/* ---------- modals ---------- */
+.modal{position:fixed;inset:0;touch-action:none;overscroll-behavior:none;background:#0b0820d0;z-index:50;display:flex;align-items:center;justify-content:center;padding:22px}
+.sheet{width:100%;max-width:420px;background:#2a2160;border:6px solid var(--edge);border-radius:30px;padding:24px;text-align:center;animation:rise .25s}
+@keyframes rise{from{transform:translateY(30px) scale(.95);opacity:0}}
+.sheet h3{margin:0 0 6px;font-size:28px;font-weight:900;letter-spacing:4px}
+.sheet .sub{color:var(--muted);font-weight:700;letter-spacing:1px;line-height:1.4}
+.sheet .art{margin:10px auto}
+.sheet .art svg{width:150px;height:150px}
+.rays{position:relative}
+.rays:before{content:"";position:absolute;inset:-20px;background:repeating-conic-gradient(#f5b85a33 0 10deg,transparent 10deg 20deg);border-radius:50%;animation:spin 8s linear infinite;z-index:0}
+.rays svg{position:relative;z-index:1}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sheet .stats2{display:flex;gap:10px;margin:16px 0}
+.sheet .stats2 div{flex:1;background:var(--edge);border-radius:16px;padding:12px 4px}
+.sheet .stats2 b{display:block;font-size:24px;font-weight:900}
+.sheet .stats2 span{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--muted)}
+.btn{display:block;width:100%;background:var(--mint);color:#0d3524;font-weight:900;letter-spacing:3px;font-size:20px;padding:16px;border-radius:999px;border:5px solid var(--edge);margin-top:12px}
+.btn.or{background:var(--orange);color:#fff}
+.btn.gd{background:var(--gold);color:#3b2400}
+.btn.dim{background:var(--panel2);color:#fff}
+.btn:disabled{opacity:.5}
+input{width:100%;font:inherit;font-size:20px;font-weight:700;padding:14px 16px;border-radius:16px;border:4px solid var(--edge);background:var(--edge);color:#fff;margin:14px 0 4px;text-align:center;-webkit-user-select:text;user-select:text}
+.toggle{display:flex;justify-content:space-between;align-items:center;background:var(--edge);border-radius:16px;padding:14px 16px;margin-top:10px;font-weight:800;letter-spacing:1px}
+.toggle i{width:52px;height:30px;border-radius:999px;background:#4a3f8a;position:relative;transition:.2s}
+.toggle i:after{content:"";position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+.toggle.on i{background:var(--mint)}
+.toggle.on i:after{left:26px}
+.toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px);transform:translateX(-50%);background:#2a2160;border:4px solid var(--edge);padding:12px 20px;border-radius:999px;font-weight:800;z-index:60;white-space:nowrap;animation:rise .25s}
+</style>
+</head>
+<body>
+
+<!-- ================= BOSS ================= -->
+<section class="screen" id="boss">
+  <div class="land" id="bossLand"></div>
+  <div class="bossui">
+    <div class="topbar">
+      <button class="roundbtn" id="gear"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5l1.6 2.6 3-.6.7 3 2.7 1.4-1.2 2.8 1.2 2.8-2.7 1.4-.7 3-3-.6L12 21.5l-1.6-2.6-3 .6-.7-3-2.7-1.4L5.2 12 4 9.2l2.7-1.4.7-3 3 .6z"/></svg></button>
+      <div class="title" id="bossNum">BOSS 1/12</div>
+      <div class="gempill gp"><span class="gemic"></span><span class="gemv">0</span></div>
+    </div>
+    <div class="lvrow"><button class="lvchip" id="lvChip"><b id="lvNum">LV 1</b><div class="xpbar"><i id="xpFill"></i></div></button><button class="qbtn" id="qBtn">📜 QUESTS<div class="dot hidden" id="qDot"></div></button></div>
+    <div class="hp" style="margin-top:10px"><i class="ghost" id="bHpG"></i><i id="bHp"></i><span id="bHpT"></span></div>
+    <div class="planettag hidden" id="planetTag"></div><div class="bname" id="bName"></div>
+    <div class="worth"><span class="gemic"></span>WORTH: <span id="bWorth"></span></div>
+    <div class="stage">
+      <button class="roundbtn arrow l" id="prevB"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M14 6l-6 6 6 6"/></svg></button>
+      <div class="creature" id="bArt"></div>
+      <div class="defeatedtag hidden" id="bDef">DEFEATED</div>
+      <button class="roundbtn arrow r" id="nextB"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M10 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="buildings">
+      <button class="bld" id="forgeBtn">
+        <div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="#ec6440" stroke-width="2.2" stroke-linecap="round"><path d="M5 19L19 5M15 5h4v4M19 19L5 5M5 9V5h4M7 15l2 2M17 15l-2 2"/></svg></div>
+        <div class="art" id="forgeArt"></div><div class="lv" id="forgeLv">LV 1</div><div class="dot hidden" id="forgeDot"></div>
+      </button>
+      <button class="bld" id="mineBtn">
+        <div class="badge"><span class="gemic" style="color:var(--gold)"></span></div>
+        <div class="art" id="mineArt"></div><div class="lv" id="mineLv">LV 1</div><div class="dot hidden" id="mineDot"></div>
+      </button>
+    </div>
+    <div class="fightrow">
+      <button class="fightbtn" id="fightBtn">FIGHT</button>
+      <button class="battery" id="battBtn">
+        <div class="h"><svg viewBox="0 0 10 18"><rect x="0" y="2" width="10" height="16" rx="2" fill="#fff"/><rect x="3" y="0" width="4" height="3" fill="#fff"/></svg>BATTERY</div>
+        <b id="battV">0s</b><small>/ 1h</small><div class="dot hidden" id="battDot"></div>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SWORD ================= -->
+<section class="screen hidden" id="sword">
+  <div class="phead"><div class="row"><div class="title">SWORD</div><div class="gempill gp"><span class="gemic"></span><span class="gemv">0</span></div></div></div>
+  <div class="sbody"><div class="wrap">
+    <div class="bigsword" id="eqArt"></div>
+    <div class="swname" id="eqName"></div>
+    <div class="swdmg"><span id="eqDmg"></span> damage / pushup</div>
+    <div class="next" id="nextCard">
+      <div class="lbl">NEXT SWORD</div>
+      <div class="mid">
+        <div class="sw"><div id="nxArt"></div><div id="nxName"></div></div>
+        <div class="stat" id="nxDmg"></div>
+        <div class="stat" style="color:var(--sky)"><span class="gemic"></span><span id="nxCost"></span></div>
+      </div>
+      <div class="bot"><div class="prog"><i id="nxProg"></i></div><button class="buybtn" id="buyBtn">BUY<svg class="lk" id="buyLock" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10V7a5 5 0 0110 0v3h1a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8a2 2 0 012-2zm2 0h6V7a3 3 0 00-6 0z"/></svg></button></div>
+    </div>
+    <div class="h2">ALL BLADES</div>
+    <div id="bladeList"></div>
+  </div></div>
+</section>
+
+<!-- ================= SHOP ================= -->
+<section class="screen hidden" id="shop">
+  <div class="phead" style="padding-bottom:0"><div class="row"><div class="title">SHOP</div><div class="gempill gp"><span class="gemic"></span><span class="gemv">0</span></div></div>
+    <div class="tabs" id="stabs"><button data-p="pets" class="on">PETS</button><button data-p="chests">CHESTS</button><button data-p="locker">LOCKER</button></div>
+  </div>
+  <div class="sbody"><div class="wrap">
+    <div id="s-pets"><p class="note" style="margin:0 4px 14px">Pets attack the boss every 2 seconds while you fight, and keep attacking while your battery has charge.</p><div id="petList"></div></div>
+    <div id="s-chests" class="hidden"><div class="keys" id="keyRow"></div><div id="chestList"></div></div>
+    <div id="s-locker" class="hidden"><div id="locker"></div></div>
+  </div></div>
+</section>
+
+<!-- ================= PROGRESS ================= -->
+<section class="screen hidden" id="progress">
+  <div class="phead" style="padding-bottom:0"><div class="row"><div class="title">PROGRESS</div></div>
+    <div class="tabs" id="ptabs"><button data-p="cal">CALENDAR</button><button data-p="bosses" class="on">BOSSES</button><button data-p="awards">AWARDS</button><button data-p="rivals">RIVALS</button></div>
+  </div>
+  <div class="sbody"><div class="wrap">
+    <div id="p-cal" class="hidden">
+      <div class="cards3"><div><b id="cStreak">0</b><span>DAY STREAK</span></div><div><b id="cMonth">0</b><span>THIS MONTH</span></div><div><b id="cBest">0</b><span>BEST DAY</span></div></div>
+      <div class="calhead"><button id="mPrev" class="roundbtn" style="width:44px;height:44px;border-width:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M14 6l-6 6 6 6"/></svg></button><span id="mName"></span><button id="mNext" class="roundbtn" style="width:44px;height:44px;border-width:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M10 6l6 6-6 6"/></svg></button></div>
+      <div class="cal" id="cal"></div>
+    </div>
+    <div id="p-bosses"><div class="h2 hidden" id="gridHead" style="margin-top:0;text-align:center;color:var(--gold)"></div><div class="grid" id="bossGrid"></div></div>
+    <div id="p-awards" class="hidden"><div id="achList"></div></div>
+    <div id="p-rivals" class="hidden">
+      <div class="race" id="raceCard"></div>
+      <div id="raceClaim"></div>
+      <div class="vs" id="vsCard"></div>
+      <div class="box"><table><thead><tr><th>PLAYER</th><th>TODAY</th><th>WEEK</th><th>ALL</th><th>BOSS</th></tr></thead><tbody id="board"></tbody></table></div>
+      <p class="note" id="syncNote" style="margin:12px 6px"></p>
+      <div class="h2">ACTIVITY</div>
+      <div class="box feed" id="feed"></div>
+    </div>
+  </div></div>
+</section>
+
+<nav><div class="in">
+  <button data-s="boss" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></span>Boss</button>
+  <button data-s="sword"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 19L19 5M15 5h4v4M19 19L5 5M5 9V5h4M7 15l2 2M17 15l-2 2"/></svg></span>Sword<span class="dot hidden" id="navDot"></span></button>
+  <button data-s="shop"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 9h16v11H4zM3 5h18v4H3zM12 5v15M12 5c-2-3-6-3-6 0M12 5c2-3 6-3 6 0"/></svg></span>Shop<span class="dot hidden" id="shopDot"></span></button>
+  <button data-s="progress"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 8-8"/><circle cx="3" cy="17" r="1.5" fill="currentColor"/><circle cx="8" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="15" r="1.5" fill="currentColor"/><circle cx="20" cy="7" r="1.5" fill="currentColor"/></svg></span>Progress<span class="dot hidden" id="progDot"></span></button>
+</div></nav>
+
+<!-- ================= FIGHT ================= -->
+<div id="fight" class="hidden"><div class="fin">
+  <div class="fhead"><span class="n" id="fName"></span><span class="t" id="fTime">0:00</span><button class="leave" id="leaveBtn">LEAVE</button></div>
+  <div class="arena" id="arena">
+    <div class="bg" id="fLand"></div>
+    <div class="creature" id="fArt"></div>
+    <div class="pets" id="fPets"></div>
+    <div class="hp"><i class="ghost" id="fHpG"></i><i id="fHp"></i><span id="fHpT"></span></div>
+  </div>
+  <div class="mid">
+    <div class="col"><div class="lbl"><svg viewBox="0 0 10 18"><rect x="0" y="2" width="10" height="16" rx="2" fill="currentColor"/><rect x="3" y="0" width="4" height="3" fill="currentColor"/></svg><span id="fBattP">0%</span></div><div class="vbar batt"><i id="fBatt"></i></div></div>
+    <div class="cam" id="cam">
+      <video id="video" playsinline muted autoplay></video>
+      <canvas id="overlay"></canvas>
+      <div class="status" id="status">Starting camera…</div>
+      <div class="count hidden" id="count"></div>
+      <div class="combo hidden" id="combo"></div>
+    </div>
+    <div class="swmeter" id="swm"><svg class="top" id="swTop" viewBox="0 0 40 80"></svg><div class="track"><i id="depth"></i></div></div>
+  </div>
+  <div class="fstats"><div><b id="sDmg">0</b><span>DAMAGE</span></div><div><b id="sReps">0</b><span>PUSHUPS</span></div><div><b id="sGems">0</b><span>CRYSTALS</span></div></div>
+</div></div>
+
+<div class="modal hidden" id="modal"><div class="sheet" id="sheet"></div></div>
+
+<script type="module">
+/* ============ CONFIG ============
+   Paste your Supabase project URL + publishable (or anon) key to turn on the shared leaderboard. */
+const SUPABASE_URL = "https://labxgvxmezftqofadslt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_x2Jw9PBRnEq52vL7JyQXsQ_Fv7zD8IF";
+
+/* Rep counting (front camera, phone upright in front of your hands).
+   Tracks how big your face/shoulders look = how close you are to the phone.
+   It learns your own range from your reps; a rep must reach DOWN_AT of that range, then come back above UP_AT. */
+const DOWN_AT = 0.6;         // fraction of your normal depth needed for a rep
+const UP_AT = 0.3;           // must come back up past this
+const MIN_CLOSER = 1.10;     // anti-cheat floor: must get at least 10% closer to the phone, no matter what
+const START_RANGE = 1.18;    // depth assumed for the very first rep (18% closer) until it learns yours
+const MIN_REP_MS = 500;      // fastest allowed rep
+const BATT_PER_REP = 60;     // seconds of battery per rep
+const BATT_MAX = 3600;
+const CRIT_CHANCE = 0.1;
+
+/* ============ DATA ============ */
+const TIERC=["#c8c3e6","#8fd07a","#5fe0a0","#7ab8ff","#8e7bff","#c07bff","#ff7bd0","#ff6b5a","#ff9a3d","#ffd24a"];
+/* Pacing: boss g is built for sword g. REPS[g] = rough push-ups it takes with that sword.
+   Each sword costs about what the previous boss's HP was, so beating a boss pays for the next sword. */
+const REPS=[10,14,15,19,23,26,35,50,70,95,120,140]; // planet 1; every boss after that = REPS_LATER
+const REPS_LATER=150;
+const BLADE_GROWTH=7.2;   // damage multiplier per sword after the named ones
+const BLADES=[
+  {name:"Rookie's Shiv",  dmg:3},
+  {name:"Mossblade",      dmg:22},
+  {name:"Jade Tooth",     dmg:170},
+  {name:"Skyline Sword",  dmg:1300},
+  {name:"Warden's Oath",  dmg:9000},
+  {name:"Dusk Saber",     dmg:65000},
+  {name:"Thorn Rose",     dmg:480000},
+  {name:"Ember Rush",     dmg:3500000},
+  {name:"Frost Key",      dmg:25000000},
+  {name:"Sunfall Blade",  dmg:180000000},
+];
+const BOSS1=[
+  {name:"Coilmoth",   type:0, acc:"#9be15d"},
+  {name:"Brambleback",type:1, acc:"#d13b2a"},
+  {name:"Gustwing",   type:2, acc:"#4ec3e0"},
+  {name:"Pebblord",   type:3, acc:"#f0a830"},
+  {name:"Vinewyrm",   type:0, acc:"#e04ea0"},
+  {name:"Hornhide",   type:1, acc:"#f5d142"},
+  {name:"Nightfeather",type:2,acc:"#8a5cff"},
+  {name:"Craghulk",   type:3, acc:"#5fe0a0"},
+  {name:"Tidecoil",   type:0, acc:"#3d8bff"},
+  {name:"Ashmane",    type:1, acc:"#ff6a2b"},
+  {name:"Stormbeak",  type:2, acc:"#ffe066"},
+  {name:"Titan Rex",  type:3, acc:"#ff3b5c"},
+];
+const PER_PLANET=12;
+const PLANET_NAMES=["","Kryos","Magmora","Nebulon","Aquaris","Umbrix","Solenne","Zephyria","Obsidia","Lumora","Vortexia","Ferrum"];
+const SYL=["ka","zor","vel","mor","thra","gul","rix","nox","bra","dra","sly","quo","van","tor","esh","grim","plo","zar","fen","oth","ul","kesh","vry","mo"];
+function seededName(seed,parts){const r=rng(seed);let n="";for(let i=0;i<parts;i++)n+=SYL[Math.floor(r()*SYL.length)];return n[0].toUpperCase()+n.slice(1)}
+const planetOf=g=>Math.floor(g/PER_PLANET);
+const slotOf=g=>g%PER_PLANET;
+function planetName(w){return w<PLANET_NAMES.length?PLANET_NAMES[w]:seededName(w*313+5,3)}
+function nice(n){if(n<100)return Math.round(n);const p=Math.pow(10,Math.floor(Math.log10(n))-1);return Math.round(n/p)*p}
+const bladeDmg=i=>i<BLADES.length?BLADES[i].dmg:Math.round(BLADES[BLADES.length-1].dmg*Math.pow(BLADE_GROWTH,i-BLADES.length+1));
+const repsFor=g=>g<REPS.length?REPS[g]:REPS_LATER;
+const bossHP=g=>nice(bladeDmg(g)*repsFor(g));
+const _bc={};
+function bossAt(g){
+  if(_bc[g])return _bc[g];
+  let b;
+  if(g<BOSS1.length)b={...BOSS1[g]};
+  else{const r=rng(g*2654435761%1e9+17);b={name:seededName(g*977+3,2+(r()<.4?1:0)),type:Math.floor(r()*4),acc:`hsl(${Math.floor(r()*360)} 85% 60%)`}}
+  b.hp=bossHP(g);b.worth=nice(b.hp/2);
+  return _bc[g]=b;
+}
+const A_=["Astral","Void","Comet","Nova","Eclipse","Quasar","Rift","Nebula","Pulsar","Halo","Abyss","Zenith"],N_=["Edge","Fang","Reaver","Brand","Cleaver","Talon","Spire","Saber","Song","Thorn"];
+function blade(i){
+  const name=i<BLADES.length?BLADES[i].name:A_[i%A_.length]+" "+N_[(i*7+Math.floor(i/A_.length))%N_.length];
+  return{name,dmg:bladeDmg(i),cost:i===0?0:bossHP(i-1)};
+}
+const tierColor=i=>i<TIERC.length?TIERC[i]:`hsl(${(i*53)%360} 90% 70%)`;
+const upCost=L=>Math.round(50*Math.pow(4,L-1));
+
+/* ============ STATE ============ */
+const KEY="reprivals-v2";
+function fresh(){return{id:(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now()),name:"",gems:0,owned:0,equipped:0,boss:0,bossHp:30,seenPlanet:0,
+  totalReps:0,days:{},battery:0,lastTick:Date.now(),forge:1,mine:1,sound:true,best:0,
+  xp:0,level:1,pets:{},keys:0,cos:{},equip:{sword:null,sky:null,name:null},q:null,qStreak:0,qLast:"",bestQStreak:0,ach:{},crits:0,chestsOpened:0,bestSession:0,events:[],raceClaimed:""}}
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.id)S=fresh();
+S={...fresh(),...S};S.equip={sword:null,sky:null,name:null,...(S.equip||{})};
+if(!(S.bossHp>0))S.bossHp=0; // fixed after data loads (see boot)
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+/* ============ UTIL ============ */
+const $=id=>document.getElementById(id);
+function fmt(n){n=Math.floor(n);if(n<1000)return String(n);if(n>=1e36)return n.toExponential(1).replace("+","");const u=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];let i=-1;while(n>=1000&&i<u.length-1){n/=1000;i++}return(n<10?(Math.floor(n*10)/10):Math.floor(n))+u[i]}
+const dayKey=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function weekStart(d=new Date()){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-(x.getDay()+6)%7);return x}
+function sumWeek(days){let t=0;const w=weekStart();for(let i=0;i<7;i++){const d=new Date(w);d.setDate(w.getDate()+i);t+=days[dayKey(d)]||0}return t}
+function dur(s){s=Math.floor(s);if(s>=3600)return"1h";if(s>=60)return Math.floor(s/60)+"m";return s+"s"}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(m){const n=document.querySelectorAll(".toast").length;const t=document.createElement("div");t.className="toast";t.textContent=m;t.style.marginBottom=(n*58)+"px";document.body.appendChild(t);setTimeout(()=>t.remove(),2400)}
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const GEM=`<svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9z" fill="currentColor"/><path d="M2 9h20M9 3L7 9l5 12M15 3l2 6-5 12" stroke="#0f0b26" stroke-width="1.4" fill="none" opacity=".45"/></svg>`;
+document.querySelectorAll(".gemic").forEach(e=>e.innerHTML=GEM);
+
+/* ============ SOUND ============ */
+let AC=null;
+function ac(){if(!S.sound)return null;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume()}catch(e){AC=null}return AC}
+function tone(f,t0,d,type="square",v=.15,f2){const a=ac();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(f,a.currentTime+t0);if(f2)o.frequency.exponentialRampToValueAtTime(f2,a.currentTime+t0+d);g.gain.setValueAtTime(v,a.currentTime+t0);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+t0+d);o.connect(g).connect(a.destination);o.start(a.currentTime+t0);o.stop(a.currentTime+t0+d+.02)}
+function noise(t0,d,v=.25){const a=ac();if(!a)return;const b=a.createBuffer(1,a.sampleRate*d,a.sampleRate),ch=b.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=(Math.random()*2-1)*(1-i/ch.length);const s=a.createBufferSource(),g=a.createGain(),f=a.createBiquadFilter();f.type="highpass";f.frequency.value=900;s.buffer=b;g.gain.value=v;s.connect(f).connect(g).connect(a.destination);s.start(a.currentTime+t0)}
+const SFX={
+  hit(c){noise(0,.12,c?.35:.22);tone(c?220:140,0,.12,"sawtooth",.18,60)},
+  kill(){[392,523,659,784].forEach((f,i)=>tone(f,i*.09,.25,"square",.12));tone(110,0,.6,"sawtooth",.15,40)},
+  buy(){[523,659,784,1047].forEach((f,i)=>tone(f,i*.07,.18,"triangle",.18))},
+  tick(){tone(880,0,.05,"square",.06)},
+  go(){tone(523,0,.12,"square",.12);tone(1047,.1,.25,"square",.12)},
+  err(){tone(180,0,.15,"square",.1,120)}
+};
+document.addEventListener("pointerdown",()=>ac(),{once:true});
+
+/* ============ ART ============ */
+function pal(w){
+  if(!w)return{s1:"#cfe0f2",s2:"#8ea3b8",s3:"#6e8499",h1:"#6f879e",h2:"#56707f",h3:"#4d6156",h4:"#33493f",tr:"#253a30",moon:"#e9eef5",moons:1,ring:false};
+  const r=rng(w*4241+9),h=Math.floor(r()*360),h2=(h+40+Math.floor(r()*80))%360;
+  return{s1:`hsl(${h} 55% 84%)`,s2:`hsl(${h} 40% 62%)`,s3:`hsl(${h} 35% 48%)`,h1:`hsl(${h2} 30% 50%)`,h2:`hsl(${h2} 32% 40%)`,h3:`hsl(${h2} 34% 32%)`,h4:`hsl(${h2} 38% 22%)`,tr:`hsl(${h2} 40% 15%)`,
+    moon:`hsl(${(h+180)%360} 70% 85%)`,moons:1+Math.floor(r()*3),ring:r()<.5};
+}
+function landscape(id,w=planetOf(S.boss)){
+  const sky=(id==="b"||id==="f")&&S.equip.sky?cosItem(S.equip.sky):null;
+  const P=sky?sky.pal:pal(w);let moons="";
+  for(let i=0;i<P.moons;i++){const x=290-i*110,y=120+i*30,rr=36-i*12;moons+=`<circle cx="${x}" cy="${y}" r="${rr*2}" fill="#fff" opacity=".15"/><circle cx="${x}" cy="${y}" r="${rr}" fill="${P.moon}" opacity=".9"/>`;
+    if(i===0&&P.ring)moons+=`<ellipse cx="${x}" cy="${y}" rx="${rr*1.9}" ry="${rr*.45}" fill="none" stroke="${P.moon}" stroke-width="5" opacity=".7" transform="rotate(-18 ${x} ${y})"/>`}
+  return `<svg viewBox="0 0 400 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <defs><linearGradient id="sky${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.s1}"/><stop offset=".55" stop-color="${P.s2}"/><stop offset="1" stop-color="${P.s3}"/></linearGradient></defs>
+  <rect width="400" height="600" fill="url(#sky${id})"/>
+  ${moons}
+  <path d="M0 330 Q60 300 130 320 T260 315 T400 300 V600 H0Z" fill="${P.h1}"/>
+  <path d="M0 380 Q80 340 170 370 T320 360 T400 350 V600 H0Z" fill="${P.h2}"/>
+  <path d="M0 430 Q90 390 200 420 T400 410 V600 H0Z" fill="${P.h3}"/>
+  <path d="M0 470 Q120 450 220 465 T400 455 V600 H0Z" fill="${P.h4}"/>
+  <g fill="${P.tr}"><path d="M30 470 L48 410 L66 470Z"/><rect x="45" y="468" width="6" height="18"/><path d="M340 462 L356 410 L372 462Z"/><rect x="353" y="460" width="6" height="18"/></g>
+  </svg>`;
+}
+function creature(k){
+  const B=bossAt(k),r=rng(k*7919+31),A=B.acc,K="#0c0a12";let g="";
+  if(B.type===0){ // serpent
+    const a=r()*30,b=r()*30;
+    g=`<path d="M70 250 C${10+a} ${170+b} ${150+b} ${190-a} ${120+a} ${120} S${200} ${40+b} ${235} ${95}" stroke="${K}" stroke-width="${36+r()*10}" fill="none" stroke-linecap="round"/>
+       <path d="M70 250 C 40 280 110 290 120 255" stroke="${K}" stroke-width="26" fill="none" stroke-linecap="round"/>
+       <ellipse cx="242" cy="98" rx="34" ry="26" fill="${K}"/><path d="M258 110 L292 130 L262 128Z" fill="${K}"/>
+       <path d="M210 70 Q220 20 250 40 Q238 60 236 76Z" fill="${A}"/><path d="M228 66 Q258 30 280 58 Q262 70 248 78Z" fill="${A}"/>
+       <path d="M140 150 L118 130 L150 132Z" fill="${A}"/><path d="M128 180 L100 170 L130 160Z" fill="${A}"/>
+       <circle cx="252" cy="92" r="5" fill="${A}"/>`;
+  }else if(B.type===1){ // beast
+    const rx=88+r()*14,ry=48+r()*10,cy=170;
+    let legs="";[[-60,0],[-30,6],[30,6],[60,0]].forEach(([x,o])=>{legs+=`<path d="M${150+x-12} ${cy+20} L${150+x-16} ${cy+80+o} L${150+x-2} ${cy+72+o} L${150+x+4} ${cy+82+o} L${150+x+12} ${cy+20}Z" fill="${K}"/>`});
+    let mane="";for(let i=0;i<9;i++){const x=110+i*16,y=cy-ry+8-Math.sin(i/8*Math.PI)*24;mane+=`<circle cx="${x}" cy="${y}" r="${20+r()*8}" fill="${A}"/>`}
+    g=`${legs}<ellipse cx="150" cy="${cy}" rx="${rx}" ry="${ry}" fill="${K}"/>
+       <path d="M60 ${cy-10} Q20 ${cy-40} 30 ${cy+20} Q50 ${cy} 64 ${cy+10}Z" fill="${K}"/>
+       <ellipse cx="242" cy="${cy-18}" rx="36" ry="30" fill="${K}"/><path d="M262 ${cy-10} L300 ${cy} L268 ${cy+10}Z" fill="${K}"/>
+       <path d="M236 ${cy-44} L250 ${cy-74} L256 ${cy-40}Z" fill="${A}"/><path d="M256 ${cy-40} L276 ${cy-62} L270 ${cy-30}Z" fill="${A}"/>
+       ${mane}<circle cx="256" cy="${cy-22}" r="5" fill="${A}"/>`;
+  }else if(B.type===2){ // flyer
+    const span=110+r()*25;
+    const wing=s=>`<path d="M150 140 Q${150+s*span*.6} ${40} ${150+s*span} ${70} L${150+s*(span-14)} ${120} L${150+s*(span-36)} ${108} L${150+s*(span-50)} ${150} L${150+s*(span-76)} ${136} L${150+s*(span-92)} ${172}Z" fill="${K}"/>
+      <path d="M${150+s*span} 70 L${150+s*(span-14)} 120 L${150+s*(span-30)} 100Z" fill="${A}"/>`;
+    g=`${wing(-1)}${wing(1)}<ellipse cx="150" cy="160" rx="38" ry="52" fill="${K}"/>
+       <path d="M150 210 Q140 260 170 280 Q150 250 162 214Z" fill="${K}"/>
+       <circle cx="150" cy="100" r="28" fill="${K}"/><path d="M142 118 L150 146 L158 118Z" fill="${A}"/>
+       <path d="M132 80 L120 44 L146 74Z" fill="${A}"/><path d="M168 80 L180 44 L154 74Z" fill="${A}"/>
+       <circle cx="140" cy="98" r="5" fill="${A}"/><circle cx="160" cy="98" r="5" fill="${A}"/>
+       <path d="M136 206 L130 236 M164 206 L170 236" stroke="${K}" stroke-width="8" stroke-linecap="round"/>`;
+  }else{ // golem
+    const w=100+r()*20;
+    g=`<rect x="${150-w/2}" y="110" width="${w}" height="110" rx="26" fill="${K}"/>
+       <rect x="122" y="62" width="56" height="52" rx="16" fill="${K}"/>
+       <rect x="${150-w/2-44}" y="118" width="46" height="120" rx="20" fill="${K}"/><rect x="${150+w/2-2}" y="118" width="46" height="120" rx="20" fill="${K}"/>
+       <rect x="112" y="214" width="32" height="56" rx="10" fill="${K}"/><rect x="156" y="214" width="32" height="56" rx="10" fill="${K}"/>
+       <path d="M${150-w/2-30} 120 L${150-w/2-18} 82 L${150-w/2-6} 120Z" fill="${A}"/><path d="M${150-w/2-14} 120 L${150-w/2+2} 92 L${150-w/2+12} 120Z" fill="${A}"/>
+       <path d="M${150+w/2+6} 120 L${150+w/2+18} 78 L${150+w/2+30} 120Z" fill="${A}"/>
+       <path d="M128 140 L172 140 L160 182 L140 182Z" fill="${A}" opacity=".9"/>
+       <rect x="134" y="80" width="12" height="8" rx="3" fill="${A}"/><rect x="154" y="80" width="12" height="8" rx="3" fill="${A}"/>`;
+  }
+  return `<svg class="c" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;overflow:visible">${g}</svg>`;
+}
+function sword(i,w=100,skin){
+  const sk=skin||null,c=sk?sk.g:tierColor(i),r=rng(i*131+7);const L=46+Math.min(i,10)*3+r()*6,W=10+r()*8,curve=i%3===2;
+  const blade=curve?`<path d="M50 ${74-L} Q${50+W*1.6} ${74-L*.5} ${50+W*.7} 74 L${50-W*.7} 74 Q${50-W*.2} ${74-L*.5} 50 ${74-L}Z" fill="${sk?sk.c1:"#dfe4f2"}"/><path d="M50 ${74-L} Q${50+W*.6} ${74-L*.5} ${50+W*.2} 74 L${50-W*.7} 74 Q${50-W*.2} ${74-L*.5} 50 ${74-L}Z" fill="${sk?sk.c2:"#b9c3dc"}"/>`
+    :`<path d="M50 ${74-L} L${50+W} ${74-L*.35} L${50+W*.8} 74 L${50-W*.8} 74 L${50-W} ${74-L*.35}Z" fill="${sk?sk.c1:"#dfe4f2"}"/><path d="M50 ${74-L} L50 74 L${50-W*.8} 74 L${50-W} ${74-L*.35}Z" fill="${sk?sk.c2:"#b9c3dc"}"/>`;
+  const gw=20+r()*12;
+  return `<svg viewBox="0 0 100 110" width="${w}" xmlns="http://www.w3.org/2000/svg"${sk&&sk.legend?' class="legend"':""}>${blade}
+    <path d="M${50-gw} 72 L${50+gw} 72 L${50+gw-6} 82 L${50-gw+6} 82Z" fill="${c}"/>
+    <rect x="44" y="82" width="12" height="18" rx="3" fill="#7a5c55"/><path d="M50 98 L58 106 L50 110 L42 106Z" fill="${c}"/>
+    <circle cx="50" cy="77" r="4" fill="#fff" opacity=".7"/></svg>`;
+}
+const SWICON=`<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 19L19 5M15 5h4v4M19 19L5 5M5 9V5h4M7 15l2 2M17 15l-2 2"/></svg>`;
+const LOCK=`<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="10" width="14" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 018 0v3"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/></svg>`;
+const FORGE=`<svg viewBox="0 0 200 170"><ellipse cx="100" cy="160" rx="95" ry="12" fill="#3f5a4b"/>
+  <path d="M30 160 L42 40 L158 40 L170 160Z" fill="#b8b8b8"/><path d="M30 160 L42 40 L60 40 L54 160Z" fill="#8e8e8e"/>
+  <rect x="26" y="20" width="44" height="40" rx="12" fill="#9a9a9a"/><rect x="130" y="20" width="44" height="40" rx="12" fill="#9a9a9a"/>
+  <path d="M100 26 Q114 50 108 80 L92 80 Q86 50 100 26Z" fill="#e3e8f2"/><path d="M100 26 Q106 50 102 80 L92 80 Q86 50 100 26Z" fill="#b9c3dc"/>
+  <rect x="80" y="80" width="40" height="8" rx="3" fill="#8a5a50"/><path d="M94 88 L106 88 L100 100Z" fill="#8a5a50"/>
+  <path d="M78 160 V125 Q100 100 122 125 V160Z" fill="#7a5233"/></svg>`;
+const MINE=`<svg viewBox="0 0 200 170"><ellipse cx="100" cy="160" rx="95" ry="12" fill="#3f5a4b"/>
+  <path d="M30 160 L40 60 L55 40 L80 30 L100 40 L125 28 L150 42 L165 60 L172 160Z" fill="#6b4a2e"/>
+  <path d="M48 160 L56 66 L144 66 L152 160Z" fill="#0a0a0a"/>
+  <rect x="40" y="52" width="120" height="14" rx="3" fill="#c79a5f"/><rect x="50" y="64" width="12" height="96" fill="#b68752"/><rect x="138" y="64" width="12" height="96" fill="#b68752"/>
+  <path d="M62 66 L100 100 L138 66" stroke="#8a6a3e" stroke-width="8" fill="none"/>
+  <path d="M110 124 L162 124 L154 148 L118 148Z" fill="#a5a5a5"/><circle cx="124" cy="152" r="8" fill="#7a7a7a"/><circle cx="150" cy="152" r="8" fill="#7a7a7a"/>
+  <path d="M120 124 L128 112 L136 120 L146 110 L152 124Z" fill="#8fd9ff"/></svg>`;
+
+/* ============ IDLE (battery-powered forge + mine) ============ */
+const idleDmg=()=>blade(S.equipped).dmg*0.01*S.forge*dmgMult();   // per second
+const idleGems=()=>blade(S.equipped).dmg*0.01*S.mine;   // per second
+function applyDamage(d){
+  let kills=0,gems=0;
+  while(d>0){
+    if(d>=S.bossHp){d-=S.bossHp;const b=bossAt(S.boss);gems+=b.worth;kills++;pushEvent({t:"boss",g:S.boss});S.boss++;S.bossHp=bossAt(S.boss).hp;addXP(40+20*planetOf(S.boss))}
+    else{S.bossHp-=d;d=0}
+  }
+  S.gems+=gems;return{kills,gems};
+}
+function tickIdle(){
+  const now=Date.now(),dt=Math.max(0,(now-S.lastTick)/1000);S.lastTick=now;
+  const act=Math.min(dt,S.battery);S.battery=Math.max(0,S.battery-dt);
+  if(act<=0)return{act:0,dmg:0,gems:0,kills:0};
+  const dmg=act*(idleDmg()+petDps()),g=act*idleGems();S.gems+=g;
+  const r=applyDamage(dmg);return{act,dmg,gems:g+r.gems,kills:r.kills};
+}
+
+/* ============ RENDER ============ */
+let viewBoss=null;
+const curBoss=()=>S.boss;
+let landW=-1;
+function renderGems(bump){document.querySelectorAll(".gemv").forEach(e=>e.textContent=fmt(S.gems));if(bump)document.querySelectorAll(".gp").forEach(e=>{e.classList.remove("bump");void e.offsetWidth;e.classList.add("bump")})}
+function renderBoss(){
+  const vb=viewBoss??curBoss();const b=bossAt(vb);const done=vb<S.boss;const w=planetOf(vb);
+  {const lk=w+"|"+S.equip.sky;if(landW!==lk){$("bossLand").innerHTML=landscape("b",w);landW=lk}}
+  $("bossNum").textContent=`BOSS ${slotOf(vb)+1}/${PER_PLANET}`;
+  $("planetTag").classList.toggle("hidden",w===0);$("planetTag").textContent="PLANET "+planetName(w).toUpperCase();
+  const hp=done?0:S.bossHp;const pct=hp/b.hp*100;
+  $("bHp").style.width=pct+"%";$("bHpG").style.width=pct+"%";
+  $("bHpT").textContent=`HP: ${fmt(Math.ceil(hp))} / ${fmt(b.hp)}`;
+  $("bName").textContent=b.name.toUpperCase();$("bWorth").textContent=fmt(b.worth);
+  if($("bArt").dataset.k!=vb){$("bArt").innerHTML=creature(vb);$("bArt").dataset.k=vb}
+  $("bDef").classList.toggle("hidden",!done);
+  $("prevB").style.visibility=slotOf(vb)>0?"visible":"hidden";
+  $("nextB").style.visibility=vb<curBoss()?"visible":"hidden";
+  $("forgeLv").textContent="LV "+S.forge;$("mineLv").textContent="LV "+S.mine;
+  $("forgeDot").classList.toggle("hidden",S.gems<upCost(S.forge));
+  $("mineDot").classList.toggle("hidden",S.gems<upCost(S.mine));
+  $("battV").textContent=dur(S.battery);
+  $("battBtn").classList.toggle("full",S.battery>0);
+  $("battDot").classList.toggle("hidden",S.battery>0);
+}
+function renderSword(){
+  const e=S.equipped;
+  $("eqArt").innerHTML=sword(e,200,S.equip.sword?cosItem(S.equip.sword).skin:null);$("eqName").textContent=blade(e).name.toUpperCase();$("eqName").style.color=tierColor(e);
+  $("eqDmg").textContent=fmt(blade(e).dmg);
+  const n=S.owned+1;
+  if(true){
+    $("nextCard").classList.remove("hidden");
+    const nb=blade(n);$("nxArt").innerHTML=sword(n,80);$("nxName").textContent=nb.name.toUpperCase();$("nxName").style.color=tierColor(n);
+    $("nxDmg").innerHTML=`<span style="color:${tierColor(n)};display:flex">${SWICON.replace('class="i"','style="width:30px;height:30px"')}</span><span style="color:${tierColor(n)}">${fmt(nb.dmg)}</span>`;
+    $("nxCost").textContent=fmt(nb.cost);
+    $("nxProg").style.width=Math.min(100,S.gems/nb.cost*100)+"%";
+    const can=S.gems>=nb.cost;$("buyBtn").classList.toggle("off",!can);$("buyLock").classList.toggle("hidden",can);
+  }else $("nextCard").classList.add("hidden");
+  const shown=Math.max(BLADES.length,S.owned+3);
+  $("bladeList").innerHTML=Array.from({length:shown},(_,i)=>blade(i)).map((bl,i)=>{
+    const own=i<=S.owned,cur=i===e;
+    return `<div class="blade ${cur?"cur":""} ${own?"":"lock"}" data-i="${i}"><span style="color:${own?(cur?tierColor(i):"#c8c3e6"):"var(--gold)"};display:flex">${own?SWICON:LOCK}</span>
+      <span class="nm">${bl.name}</span>${(!own||cur)&&i>0?`<span class="ct">${fmt(bl.cost)}</span>`:""}<span class="dm" style="color:${own&&!cur?"#a8a2cc":tierColor(i)}">${fmt(bl.dmg)} dmg</span></div>`}).join("");
+  $("navDot").classList.toggle("hidden",!(S.gems>=blade(n).cost));
+}
+let calMonth=new Date();calMonth.setDate(1);
+function renderProgress(){
+  // bosses grid
+  const W=planetOf(S.boss),base=W*PER_PLANET;
+  $("gridHead").classList.toggle("hidden",W===0);$("gridHead").textContent="PLANET "+planetName(W).toUpperCase();
+  $("bossGrid").innerHTML=Array.from({length:PER_PLANET},(_,j)=>base+j).map(i=>{const b=bossAt(i);
+    const unlocked=i<=S.boss;const cur=i===S.boss;
+    return unlocked?`<button class="tile ${cur?"cur":""}" data-b="${i}"><div class="pic">${landscape("t"+i,W)}<div class="c" style="position:absolute;left:18%;top:10%;width:64%;height:84%">${creature(i)}</div></div><div class="nm">${b.name}</div></button>`
+      :`<div class="tile"><div class="lockic">${LOCK.replace('class="i"','')}</div><div class="nm">${b.name}</div></div>`}).join("");
+  // calendar
+  const y=calMonth.getFullYear(),m=calMonth.getMonth();
+  $("mName").textContent=calMonth.toLocaleString(undefined,{month:"long",year:"numeric"}).toUpperCase();
+  const first=new Date(y,m,1),off=(first.getDay()+6)%7,dim=new Date(y,m+1,0).getDate(),tk=dayKey(),now=new Date();
+  let h=["M","T","W","T","F","S","S"].map(d=>`<div class="dw">${d}</div>`).join("");
+  for(let i=0;i<off;i++)h+=`<div style="visibility:hidden"></div>`;
+  let mt=0;
+  for(let d=1;d<=dim;d++){const dt=new Date(y,m,d),k=dayKey(dt),n=S.days[k]||0;mt+=n;
+    h+=`<div class="${n?"hit":""} ${k===tk?"today":""} ${dt>now?"fut":""}">${d}${n?`<b>${n}</b>`:""}</div>`}
+  $("cal").innerHTML=h;
+  let streak=0;const d0=new Date();if(!S.days[dayKey(d0)])d0.setDate(d0.getDate()-1);while(S.days[dayKey(d0)]){streak++;d0.setDate(d0.getDate()-1)}
+  $("cStreak").textContent=streak;$("cMonth").textContent=fmt(mt);$("cBest").textContent=fmt(Math.max(0,...Object.values(S.days)));
+  renderBoard();
+}
+function render(){ensureQuests();renderGems();renderBoss();renderSword();renderProgress();renderShop();renderAwards();renderLevel();renderDots()}
+
+/* ============ NAV ============ */
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
+  ["boss","sword","shop","progress"].forEach(s=>$(s).classList.toggle("hidden",s!==b.dataset.s));
+  if(b.dataset.s==="progress")pull();SFX.tick();
+});
+$("ptabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+  $("ptabs").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+  ["cal","bosses","awards","rivals"].forEach(p=>$("p-"+p).classList.toggle("hidden",p!==b.dataset.p));
+  if(b.dataset.p==="rivals")pull();SFX.tick()};
+$("mPrev").onclick=()=>{calMonth.setMonth(calMonth.getMonth()-1);renderProgress()};
+$("mNext").onclick=()=>{calMonth.setMonth(calMonth.getMonth()+1);renderProgress()};
+$("bossGrid").onclick=e=>{const t=e.target.closest("[data-b]");if(!t)return;viewBoss=+t.dataset.b;document.querySelector('nav [data-s="boss"]').click();renderBoss()};
+$("prevB").onclick=()=>{viewBoss=Math.max(0,(viewBoss??curBoss())-1);renderBoss();SFX.tick()};
+$("nextB").onclick=()=>{viewBoss=Math.min(curBoss(),(viewBoss??curBoss())+1);if(viewBoss===curBoss())viewBoss=null;renderBoss();SFX.tick()};
+
+/* ============ MODALS ============ */
+function modal(html,onOpen){$("sheet").innerHTML=html;$("modal").classList.remove("hidden");onOpen&&onOpen($("sheet"))}
+const close=()=>$("modal").classList.add("hidden");
+function askName(){
+  modal(`<h3>WHO'S LIFTING?</h3><div class="sub">Your name on the leaderboard</div><input id="nm" maxlength="14" placeholder="Name" value="${esc(S.name)}"><button class="btn" id="ok">LET'S GO</button>`,s=>{
+    const i=s.querySelector("#nm");setTimeout(()=>i.focus(),60);
+    s.querySelector("#ok").onclick=()=>{const v=i.value.trim();if(!v)return;S.name=v.slice(0,14);save();close();render();sync()}});
+}
+$("gear").onclick=()=>{
+  modal(`<h3>SETTINGS</h3><div class="sub">Playing as <b style="color:#fff">${esc(S.name)}</b></div>
+    <div class="toggle ${S.sound?"on":""}" id="snd">SOUND<i></i></div>
+    <button class="btn dim" id="rn">CHANGE NAME</button>
+    <div class="sub" style="margin-top:16px;font-size:13px;text-align:left">📱 <b>Setup:</b> lean your phone upright 1–2 ft in front of your hands, front camera facing you. Keep your face in frame (shoulders help but can leave the frame at the bottom). A rep counts when you go down far enough to fill the sword meter and come back up.</div>
+    <button class="btn" id="cl">DONE</button>`,s=>{
+    s.querySelector("#snd").onclick=e=>{S.sound=!S.sound;save();e.currentTarget.classList.toggle("on",S.sound)};
+    s.querySelector("#rn").onclick=askName;s.querySelector("#cl").onclick=close});
+};
+function buildingSheet(kind){
+  const L=S[kind],cost=upCost(L),forge=kind==="forge";
+  const rate=forge?idleDmg():idleGems(),nextRate=rate/L*(L+1);
+  modal(`<div class="art">${forge?FORGE:MINE}</div><h3>${forge?"FORGE":"CRYSTAL MINE"} · LV ${L}</h3>
+    <div class="sub">${forge?"While your battery has charge, the forge keeps hitting the boss for you, even with the app closed.":"While your battery has charge, the mine digs up crystals for you, even with the app closed."}</div>
+    <div class="stats2"><div><b>${fmt(rate*60)}</b><span>${forge?"DMG":"◆"} / MIN</span></div><div><b style="color:var(--mint)">${fmt(nextRate*60)}</b><span>NEXT LEVEL</span></div></div>
+    <button class="btn gd" id="up" ${S.gems<cost?"disabled":""}>UPGRADE · ◆ ${fmt(cost)}</button><button class="btn dim" id="cl">CLOSE</button>`,s=>{
+    s.querySelector("#cl").onclick=close;
+    s.querySelector("#up").onclick=()=>{if(S.gems<cost){SFX.err();return}S.gems-=cost;S[kind]++;qAdd("upgrade",1);save();SFX.buy();close();render();renderGems(true);toast(`${forge?"Forge":"Mine"} upgraded to LV ${S[kind]}`)}});
+}
+$("forgeBtn").onclick=()=>buildingSheet("forge");
+$("mineBtn").onclick=()=>buildingSheet("mine");
+$("battBtn").onclick=()=>modal(`<h3>BATTERY</h3><div class="sub">Every push-up adds <b style="color:#fff">1 minute</b> of charge (max 1 hour).<br><br>While it's charged, your forge and mine keep working, even when the app is closed.</div>
+  <div class="stats2"><div><b>${dur(S.battery)}</b><span>CHARGE LEFT</span></div><div><b>${fmt(idleDmg()*60)}</b><span>DMG / MIN</span></div><div><b>${fmt(idleGems()*60)}</b><span>◆ / MIN</span></div></div>
+  <button class="btn or" id="f">CHARGE IT · FIGHT</button>`,s=>s.querySelector("#f").onclick=()=>{close();$("fightBtn").click()});
+$("buyBtn").onclick=()=>{
+  const n=S.owned+1;const b=blade(n);
+  if(S.gems<b.cost){SFX.err();toast(`Need ◆ ${fmt(b.cost-S.gems)} more`);return}
+  S.gems-=b.cost;S.owned=n;S.equipped=n;pushEvent({t:"sword",i:n});save();SFX.buy();render();sync();
+  modal(`<div class="sub" style="letter-spacing:4px;font-weight:800">NEW SWORD</div><div class="art rays">${sword(n,150)}</div>
+    <h3 style="color:${tierColor(n)}">${b.name.toUpperCase()}</h3><div class="sub" style="color:var(--gold)">${fmt(b.dmg)} damage / pushup</div>
+    <button class="btn or" id="f">TRY IT OUT</button><button class="btn dim" id="cl">NICE</button>`,s=>{s.querySelector("#cl").onclick=close;s.querySelector("#f").onclick=()=>{close();$("fightBtn").click()}});
+};
+$("bladeList").onclick=e=>{const t=e.target.closest(".blade");if(!t)return;const i=+t.dataset.i;if(i<=S.owned&&i!==S.equipped){S.equipped=i;save();SFX.tick();render()}};
+
+/* ============ LEADERBOARD (Supabase) ============ */
+let rivals=[],syncErr="";
+const online=()=>SUPABASE_URL&&SUPABASE_KEY;
+const base=()=>SUPABASE_URL.replace(/\/$/,"")+"/rest/v1/players";
+function hdr(){const h={apikey:SUPABASE_KEY,"Content-Type":"application/json"};if(SUPABASE_KEY.startsWith("eyJ"))h.Authorization="Bearer "+SUPABASE_KEY;return h}
+function recent(){const o={},c=new Date();c.setDate(c.getDate()-60);const ck=dayKey(c);for(const k in S.days)if(k>=ck)o[k]=S.days[k];return o}
+let noExtra=false;
+function row(ex){const o={id:S.id,name:S.name,total_reps:S.totalReps,days:recent(),boss:S.boss,blade:S.owned,updated_at:new Date().toISOString()};
+  if(ex)o.extra={level:S.level,events:S.events.slice(-20),color:S.equip.name?cosItem(S.equip.name).color:null};return o}
+async function sync(){
+  if(!online()||!S.name)return;
+  try{const r=await fetch(base(),{method:"POST",headers:{...hdr(),Prefer:"resolution=merge-duplicates,return=minimal"},
+      body:JSON.stringify(row(!noExtra))});
+    if(!r.ok){const t=await r.text();if(/extra/.test(t)&&!noExtra){noExtra=true;return sync()}throw new Error(r.status+" "+t.slice(0,100))}syncErr=""}catch(e){syncErr=e.message||String(e)}
+  pull();
+}
+async function pull(){
+  if(!online()){renderBoard();return}
+  try{const r=await fetch(base()+"?select=*",{headers:hdr()});if(!r.ok)throw new Error(r.status+" "+(await r.text()).slice(0,100));rivals=await r.json();syncErr=""}catch(e){syncErr=e.message||String(e)}
+  renderBoard();
+}
+function bossLabel(g){const w=planetOf(g);if(w>planetOf(S.boss)&&planetOf(S.boss)===0)return"👑";return w?`P${w+1}·${slotOf(g)+1}`:String(slotOf(g)+1)}
+function renderBoard(){
+  const me={id:S.id,name:S.name||"You",total_reps:S.totalReps,days:S.days,boss:S.boss};
+  const list=[me,...rivals.filter(p=>p.id!==S.id)].map(p=>({...p,today:(p.days||{})[dayKey()]||0,week:sumWeek(p.days||{})}));
+  list.sort((a,b)=>b.today-a.today||b.week-a.week||b.total_reps-a.total_reps);
+  const mx=k=>Math.max(...list.map(p=>p[k]||0));const M={today:mx("today"),week:mx("week"),total_reps:mx("total_reps"),boss:mx("boss")};
+  const td=(p,k,s)=>`<td class="${list.length>1&&p[k]===M[k]&&p[k]>0?"lead":""}">${s}</td>`;
+  $("board").innerHTML=list.map(p=>`<tr><td class="${p.id===S.id?"me":""}" style="${nameStyle(p)}">${esc(p.name)} <small style="color:var(--muted);font-size:11px">LV${p.id===S.id?S.level:((p.extra||{}).level||1)}</small></td>${td(p,"today",fmt(p.today))}${td(p,"week",fmt(p.week))}${td(p,"total_reps",fmt(p.total_reps))}${td(p,"boss",bossLabel(p.boss))}</tr>`).join("");
+  const rival=list.find(p=>p.id!==S.id);
+  $("vsCard").innerHTML=rival?`<div class="p ${me.today>=rival.today&&me.today>0?"win":""}"><b>${list.find(p=>p.id===S.id).today}</b><span>${esc(me.name).toUpperCase()}</span></div><div class="x">VS<br><span style="font-size:11px;color:var(--muted)">TODAY</span></div><div class="p ${rival.today>me.today?"win":""}"><b>${rival.today}</b><span>${esc(rival.name).toUpperCase()}</span></div>`
+    :`<div class="p"><b>${S.days[dayKey()]||0}</b><span>YOUR REPS TODAY</span></div>`;
+  renderRivalry(list);
+  $("syncNote").textContent=noExtra?"Activity feed is off: run the one-line SQL I sent in Supabase to turn it on.":!online()?"Leaderboard offline: paste your Supabase URL and key at the top of index.html.":syncErr?`Can't reach the leaderboard right now (${syncErr}). Reps are saved on this phone and sync next time.`:"Gold = leading that column. Updates after every fight.";
+}
+
+/* ============ FIGHT ============ */
+let lmk=null,stream=null,fighting=false,raf=0,wake=null,lastVT=-1;
+let ses={reps:0,dmg:0,gems:0,start:0,kills:0};
+let det;const newDet=()=>({state:"up",lo:null,hi:null,x:null,peak:0,downAt:0,last:0,lost:0,armed:false,K:{eye:1,ear:.42,sh:.17,mouth:1.25}});det=newDet();
+let combo=0,comboT=0;
+
+async function loadPose(){
+  if(lmk)return lmk;
+  const V="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+  const {PoseLandmarker,FilesetResolver}=await import(V+"/vision_bundle.mjs");
+  const files=await FilesetResolver.forVisionTasks(V+"/wasm");
+  const o=d=>({baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:d},runningMode:"VIDEO",numPoses:1});
+  try{lmk=await PoseLandmarker.createFromOptions(files,o("GPU"))}catch(e){lmk=await PoseLandmarker.createFromOptions(files,o("CPU"))}
+  return lmk;
+}
+function renderFight(){
+  const k=curBoss(),b=bossAt(k),hp=S.bossHp,p=hp/b.hp*100;
+  $("fName").textContent=b.name.toUpperCase();
+  $("fHp").style.width=p+"%";$("fHpG").style.width=p+"%";
+  $("fHpT").textContent=`HP: ${fmt(Math.ceil(hp))} / ${fmt(b.hp)}`;
+  $("sDmg").textContent=fmt(ses.dmg);$("sReps").textContent=ses.reps;$("sGems").textContent=fmt(ses.gems);
+  const bp=Math.round(S.battery/BATT_MAX*100);$("fBattP").textContent=bp+"%";$("fBatt").style.height=bp+"%";
+}
+function setFightBoss(enter){const a=$("fArt");a.innerHTML=creature(curBoss());a.className="creature"+(enter?" enter":"")}
+
+$("fightBtn").onclick=async()=>{
+  if(!S.name){askName();return}
+  viewBoss=null;ac();
+  $("fight").classList.remove("hidden");$("fLand").innerHTML=landscape("f",planetOf(S.boss));setFightBoss(false);
+  $("swTop").innerHTML=sword(S.equipped,40,S.equip.sword?cosItem(S.equip.sword).skin:null).replace(/^<svg[^>]*>/,"").replace(/<\/svg>$/,"");$("swTop").setAttribute("viewBox","0 0 100 110");
+  $("depth").parentElement.querySelectorAll(".tick").forEach(t=>t.remove());
+  for(let i=1;i<10;i++){const t=document.createElement("div");t.className="tick";t.style.bottom=(i*10)+"%";$("depth").parentElement.appendChild(t)}
+  ses={reps:0,dmg:0,gems:0,start:0,kills:0};combo=0;renderFight();
+  $("status").textContent="Starting camera…";
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:640},height:{ideal:480}},audio:false})}
+  catch(e){endFight(true);modal(`<h3>CAMERA BLOCKED</h3><div class="sub">Push-ups only count on camera. In Safari tap <b>aA → Website Settings → Camera → Allow</b>, then hit FIGHT again.</div><button class="btn" id="cl">OK</button>`,s=>s.querySelector("#cl").onclick=close);return}
+  const v=$("video");v.srcObject=stream;await v.play().catch(()=>{});
+  $("status").textContent="Loading rep counter…";
+  try{await loadPose()}catch(e){endFight(true);modal(`<h3>COULDN'T LOAD</h3><div class="sub">The rep counter didn't download. Check your connection and try again.<br><small>${esc(e.message||e)}</small></div><button class="btn" id="cl">OK</button>`,s=>s.querySelector("#cl").onclick=close);return}
+  try{wake=await navigator.wakeLock?.request("screen")}catch(e){}
+  fighting=true;ses.start=Date.now();det=newDet();
+  renderFightPets();clearInterval(petTimer);petTimer=setInterval(petAttack,2000);
+  countdown();loop();
+};
+function countdown(){
+  const el=$("count");let n=5;el.className="count";el.textContent=n;SFX.tick();
+  $("status").textContent="Get in push-up position, face the camera";
+  const iv=setInterval(()=>{if(!fighting){clearInterval(iv);el.classList.add("hidden");return}
+    n--;if(n>0){el.textContent=n;SFX.tick()}
+    else if(n===0){el.textContent="GO!";el.classList.add("go");SFX.go();det.armed=true;det.state="up";if(det.x!=null){det.lo=det.x;det.hi=det.x+Math.log(START_RANGE)}$("status").textContent=""}
+    else{clearInterval(iv);el.classList.add("hidden")}},1000);
+}
+$("leaveBtn").onclick=()=>endFight(false);
+function endFight(silent){
+  fighting=false;cancelAnimationFrame(raf);
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+  try{wake?.release()}catch(e){}wake=null;
+  $("fight").classList.add("hidden");$("count").classList.add("hidden");$("combo").classList.add("hidden");
+  if(!silent&&ses.reps>=5)qAdd("sessions",1);
+  if(ses.reps>S.bestSession)S.bestSession=ses.reps;
+  clearInterval(petTimer);
+  save();render();
+  if(!silent&&ses.reps>0){
+    sync();
+    const secs=Math.floor((Date.now()-ses.start)/1000);
+    modal(`<h3>SESSION DONE</h3><div class="sub">${Math.floor(secs/60)}:${String(secs%60).padStart(2,"0")} on the clock${ses.kills?` · <b style="color:var(--gold)">${ses.kills} boss${ses.kills>1?"es":""} down</b>`:""}</div>
+      <div class="stats2"><div><b>${ses.reps}</b><span>PUSHUPS</span></div><div><b>${fmt(ses.dmg)}</b><span>DAMAGE</span></div><div><b style="color:var(--sky)">${fmt(ses.gems)}</b><span>CRYSTALS</span></div></div>
+      <div class="sub">Battery charged to <b style="color:#fff">${dur(S.battery)}</b>. Today: <b style="color:#fff">${S.days[dayKey()]||0}</b> reps</div>
+      <button class="btn" id="cl">COLLECT</button>`,s=>s.querySelector("#cl").onclick=()=>{close();renderGems(true);SFX.buy()});
+  }
+}
+function loop(){
+  if(!fighting)return;
+  const v=$("video");
+  if(v.readyState>=2&&v.currentTime!==lastVT&&lmk){lastVT=v.currentTime;let r=null;try{r=lmk.detectForVideo(v,performance.now())}catch(e){}if(r)onPose(r,v)}
+  if(ses.start){const s=Math.floor((Date.now()-ses.start)/1000);$("fTime").textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+  if(combo&&performance.now()-comboT>3500){combo=0;$("combo").classList.add("hidden")}
+  raf=requestAnimationFrame(loop);
+}
+const BONES=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24]];
+function drawPose(lm,v){
+  const c=$("overlay"),W=c.clientWidth,H=c.clientHeight;if(c.width!==W*2){c.width=W*2;c.height=H*2}
+  const x=c.getContext("2d");x.setTransform(2,0,0,2,0,0);x.clearRect(0,0,W,H);if(!lm)return;
+  const vw=v.videoWidth,vh=v.videoHeight,sc=Math.max(W/vw,H/vh),ox=(W-vw*sc)/2,oy=(H-vh*sc)/2,P=p=>[p.x*vw*sc+ox,p.y*vh*sc+oy];
+  x.lineWidth=9;x.lineCap="round";x.strokeStyle=det.state==="down"?"#5fe0a0":"#ec6440d0";
+  for(const[a,b]of BONES){const A=lm[a],B=lm[b];if((A.visibility??1)<.4||(B.visibility??1)<.4)continue;const[x1,y1]=P(A),[x2,y2]=P(B);x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.stroke()}
+  x.fillStyle=det.state==="down"?"#5fe0a0":"#ec6440";for(const i of[0,2,5,7,8,11,12,13,14,15,16]){const p=lm[i];if((p.visibility??1)<.4)continue;const[a,b]=P(p);x.beginPath();x.arc(a,b,8,0,7);x.fill()}
+}
+// how close you are to the camera, from whatever is visible (eyes, ears, mouth, shoulders), in eye-width units
+const PAIRS={eye:[2,5],ear:[7,8],mouth:[9,10],sh:[11,12]};
+function closeness(lm,W,H){
+  const vis=i=>(lm[i].visibility??1)>.5,d={};
+  for(const k in PAIRS){const[a,b]=PAIRS[k];if(vis(a)&&vis(b))d[k]=Math.hypot((lm[a].x-lm[b].x)*W,(lm[a].y-lm[b].y)*H)/H}
+  if(d.eye)for(const k in d)if(k!=="eye")det.K[k]=det.K[k]*.95+(d.eye/d[k])*.05; // learn ratios while eyes are visible
+  const est=Object.keys(d).map(k=>d[k]*det.K[k]).sort((a,b)=>a-b);
+  if(!est.length)return null;
+  return est[Math.floor(est.length/2)];
+}
+function onPose(res,v){
+  const now=performance.now(),lm=res.landmarks&&res.landmarks[0];
+  const c=lm?closeness(lm,v.videoWidth,v.videoHeight):null;
+  drawPose(c?lm:null,v);
+  if(c==null){
+    if(!det.lost)det.lost=now;
+    if(now-det.lost>3000&&det.armed){det.state="up";det.lo=null;det.x=null;$("status").textContent="Can't see you, get your face in frame"}
+    return; // brief tracking loss (e.g. too close at the bottom) keeps the rep in progress
+  }
+  det.lost=0;
+  const x=Math.log(c);det.x=det.x==null?x:det.x*.5+x*.5;
+  if(!det.armed)return;
+  if(det.lo==null){det.lo=det.x;det.hi=det.x+Math.log(START_RANGE);return}
+  const X=det.x,range=Math.max(det.hi-det.lo,Math.log(MIN_CLOSER)/DOWN_AT),depth=(X-det.lo)/range;
+  const fill=Math.max(0,Math.min(100,depth/DOWN_AT*100));
+  $("depth").style.height=fill+"%";$("swm").classList.toggle("go",fill>=100);
+  if(det.state==="up"){
+    if(X<det.lo)det.lo=X;else if(depth<.2)det.lo+=(X-det.lo)*.01;           // follow the top of your rep
+    if(depth>=DOWN_AT&&X-det.lo>=Math.log(MIN_CLOSER)){det.state="down";det.downAt=now;det.peak=X;$("status").textContent="UP!";SFX.tick()}
+  }else{
+    det.peak=Math.max(det.peak,X);
+    if(now-det.downAt>6000){det.state="up";det.lo=X;$("status").textContent="Reset, keep going";return}
+    if(depth<=UP_AT&&now-det.downAt>120){
+      det.state="up";
+      // learn your depth: jump to deeper reps right away, ease down slowly for shallower ones
+      det.hi=det.peak>det.hi?det.peak:det.hi-(det.hi-det.peak)*.1;
+      if(now-det.last>=MIN_REP_MS){det.last=now;rep()}else{$("status").textContent="Too fast, full reps only";SFX.err()}
+    }
+  }
+}
+function rep(){
+  const k=dayKey(),base=blade(S.equipped).dmg,crit=Math.random()<CRIT_CHANCE,dmg=(crit?base*2:base)*dmgMult();
+  S.totalReps++;S.days[k]=(S.days[k]||0)+1;S.best=Math.max(S.best||0,S.days[k]);
+  S.battery=Math.min(BATT_MAX,S.battery+BATT_PER_REP);
+  S.gems+=base;ses.gems+=base;ses.reps++;ses.dmg+=dmg;
+  combo++;comboT=performance.now();
+  if(crit){S.crits++;qAdd("crits",1)}qAdd("reps",1);qAdd("session",ses.reps,true);qAdd("combo",combo,true);qAdd("dmg",dmg);addXP(10);
+  if(combo>=3){$("combo").textContent=`COMBO x${combo}`;$("combo").classList.remove("hidden")}
+  $("status").textContent=crit?"CRITICAL!":"";
+  SFX.hit(crit);
+  const a=$("fArt");a.classList.remove("hit","enter");void a.offsetWidth;a.classList.add("hit");
+  const ar=$("arena");
+  const sl=document.createElementNS("http://www.w3.org/2000/svg","svg");sl.setAttribute("class","slash");sl.setAttribute("viewBox","0 0 100 100");
+  const flip=Math.random()<.5;sl.innerHTML=`<path d="M${flip?90:10} 10 L${flip?10:90} 90"/>`;ar.appendChild(sl);setTimeout(()=>sl.remove(),320);
+  const p=document.createElement("div");p.className="dmgpop"+(crit?" crit":"");p.textContent=(crit?"CRIT -":"-")+fmt(dmg);
+  p.style.left=(30+Math.random()*40)+"%";p.style.top=(15+Math.random()*25)+"%";ar.appendChild(p);setTimeout(()=>p.remove(),800);
+  {
+    const b=bossAt(S.boss);const r=applyDamage(dmg);
+    if(r.kills){ses.kills+=r.kills;ses.gems+=r.gems;bossDown(b,r.gems)}
+    else{$("fHp").style.width=(S.bossHp/b.hp*100)+"%";setTimeout(()=>$("fHpG").style.width=(S.bossHp/b.hp*100)+"%",50)}
+  }
+  save();renderFight();renderGems(true);
+}
+function bossDown(b,g){
+  SFX.kill();
+  const a=$("fArt");a.classList.remove("hit");void a.offsetWidth;a.classList.add("die");
+  const bn=document.createElement("div");bn.className="banner";bn.innerHTML=`<b>DEFEATED!</b><span>+◆ ${fmt(g)}</span>`;$("arena").appendChild(bn);setTimeout(()=>bn.remove(),1600);
+  setTimeout(()=>{$("fLand").innerHTML=landscape("f",planetOf(S.boss));setFightBoss(true);renderFight();if(!checkPlanet())toast(`New boss: ${bossAt(S.boss).name}`)},900);
+  sync();
+}
+
+/* ============ NEW PLANET REVEAL ============ */
+function checkPlanet(){
+  const w=planetOf(S.boss);if(w<=(S.seenPlanet||0))return false;
+  S.seenPlanet=w;save();render();
+  SFX.kill();setTimeout(()=>SFX.buy(),500);
+  modal(`<div class="sub" style="letter-spacing:4px;font-weight:800;color:var(--gold)">${w===1?"WAIT… THERE'S MORE":"PLANET CLEARED"}</div>
+    <div class="planetpic">${landscape("np",w)}<div class="c">${creature(w*PER_PLANET)}</div></div>
+    <h3>NEW PLANET</h3><div class="pname">${planetName(w).toUpperCase()}</div>
+    <div class="sub">${PER_PLANET} new bosses. They hit way harder, so keep upgrading that sword.</div>
+    <button class="btn or" id="cl">EXPLORE</button>`,s=>s.querySelector("#cl").onclick=()=>{close();SFX.go()});
+  return true;
+}
+
+/* ============ META: level · quests · achievements · pets · chests · cosmetics · rivalry ============ */
+const hashStr=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
+const yday=()=>{const d=new Date();d.setDate(d.getDate()-1);return dayKey(d)};
+function pushEvent(e){e.ts=Date.now();S.events.push(e);if(S.events.length>30)S.events.splice(0,S.events.length-30)}
+const dmgMult=()=>(1+0.02*(S.level-1))*Math.pow(1.25,completedSets());
+
+/* ---- player level (forever) ---- */
+const xpNeed=L=>Math.round(100*Math.pow(L,1.35));
+function addXP(n){
+  S.xp+=n;
+  while(S.xp>=xpNeed(S.level)){
+    S.xp-=xpNeed(S.level);S.level++;
+    const g=nice(bossAt(S.boss).worth*0.3);S.gems+=g;
+    const key=S.level%5===0;if(key)S.keys++;
+    pushEvent({t:"lvl",v:S.level});
+    setTimeout(()=>{toast(`LEVEL UP! LV ${S.level} · +◆${fmt(g)}${key?" · +1 🔑":""}`);SFX.buy()},300);
+  }
+  renderLevel();
+}
+function renderLevel(){$("lvNum").textContent="LV "+S.level;$("xpFill").style.width=(S.xp/xpNeed(S.level)*100)+"%"}
+$("lvChip").onclick=()=>modal(`<h3>LEVEL ${S.level}</h3><div class="sub">${fmt(S.xp)} / ${fmt(xpNeed(S.level))} XP to level ${S.level+1}</div>
+  <div class="bar" style="height:14px;margin:12px 0"><i style="width:${S.xp/xpNeed(S.level)*100}%;background:var(--sky)"></i></div>
+  <div class="stats2"><div><b>+${(S.level-1)*2}%</b><span>LEVEL DMG</span></div><div><b>+${Math.round((Math.pow(1.25,completedSets())-1)*100)}%</b><span>SET BONUS</span></div><div><b>x${dmgMult().toFixed(2)}</b><span>TOTAL</span></div></div>
+  <div class="sub" style="font-size:13px">XP: 10 per push-up, more for bosses, quests and awards. Every level: +2% damage and crystals. Every 5 levels: a chest key 🔑.</div>
+  <button class="btn" id="cl">OK</button>`,s=>s.querySelector("#cl").onclick=close);
+
+/* ---- daily quests + streak ---- */
+const QP={
+  reps:{t:n=>`Do ${n} push-ups today`,n:[30,50,75,100]},
+  session:{t:n=>`Do ${n} push-ups in one fight`,n:[15,25,40]},
+  dmg:{t:n=>`Deal ${fmt(n)} damage in fights`},
+  crits:{t:n=>`Land ${n} critical hits`,n:[3,5,8]},
+  sessions:{t:n=>`Finish ${n} fights (5+ reps each)`,n:[2,3]},
+  upgrade:{t:()=>`Upgrade a pet, the forge or the mine`,n:[1]},
+  combo:{t:n=>`Hit a x${n} combo`,n:[10,15,25]},
+};
+function ensureQuests(){
+  const d=dayKey();if(S.q&&S.q.day===d)return;
+  const r=rng(hashStr(d+S.id));const pool=["session","dmg","crits","sessions","upgrade","combo"];
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+  S.q={day:d,list:["reps",pool[0],pool[1]].map(k=>({k,n:k==="dmg"?nice(bossAt(S.boss).hp*0.4):QP[k].n[Math.floor(r()*QP[k].n.length)],p:0,c:false}))};
+  save();
+}
+function qAdd(k,v,max){if(!S.q)return;for(const q of S.q.list)if(q.k===k&&!q.c){q.p=max?Math.max(q.p,v):q.p+v}if(!fighting)renderDots()}
+const curStreak=()=>(S.qLast===dayKey()||S.qLast===yday())?S.qStreak:0;
+const streakMult=()=>1+0.1*Math.min(curStreak(),20);
+function openQuests(){
+  ensureQuests();
+  const now=new Date(),mid=new Date(now);mid.setHours(24,0,0,0);const hl=Math.floor((mid-now)/3600000),ml=Math.floor((mid-now)/60000)%60;
+  const allClaimed=S.q.list.every(q=>q.c);
+  modal(`<h3>DAILY QUESTS</h3>
+    <div class="qhead"><div>🔥 ${curStreak()}<span>DAY STREAK</span></div><div>x${streakMult().toFixed(1)}<span>REWARDS</span></div><div>${hl}h ${ml}m<span>RESETS</span></div></div>
+    ${S.q.list.map((q,i)=>{const done=q.p>=q.n;return `<div class="item ${q.c?"dim":""}"><div class="m"><div class="t" style="font-size:15px">${QP[q.k].t(q.n)}</div>
+      <div class="bar"><i style="width:${Math.min(100,q.p/q.n*100)}%"></i></div><div class="d">${fmt(Math.min(q.p,q.n))} / ${fmt(q.n)}</div></div>
+      ${q.c?`<span class="sbtn mint">✓</span>`:`<button class="sbtn ${done?"":"off"}" data-q="${i}">${done?"CLAIM":"◆"+fmt(nice(bossAt(S.boss).worth*0.25*streakMult()))}</button>`}</div>`}).join("")}
+    <div class="sub" style="font-size:13px">${allClaimed?"All done today. Come back tomorrow to keep the streak 🔥":"Finish all 3 for a free chest key 🔑. Every 7-day streak gives a bonus key."}</div>
+    <button class="btn dim" id="cl">CLOSE</button>`,s=>{
+    s.querySelector("#cl").onclick=close;
+    s.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{
+      const q=S.q.list[+b.dataset.q];if(q.c||q.p<q.n){SFX.err();return}
+      q.c=true;const g=nice(bossAt(S.boss).worth*0.25*streakMult());S.gems+=g;addXP(Math.round(60*streakMult()));SFX.buy();
+      if(S.q.list.every(x=>x.c)&&S.qLast!==dayKey()){
+        S.qStreak=S.qLast===yday()?S.qStreak+1:1;S.qLast=dayKey();S.bestQStreak=Math.max(S.bestQStreak,S.qStreak);
+        S.keys++;let bonus=S.qStreak%7===0;if(bonus)S.keys++;pushEvent({t:"quest",v:S.qStreak});
+        setTimeout(()=>toast(`ALL QUESTS DONE · 🔥${S.qStreak} · +${bonus?2:1} 🔑`),400);sync();
+      }
+      save();render();renderGems(true);openQuests();
+    });
+  });
+}
+$("qBtn").onclick=openQuests;
+
+/* ---- achievements (tiers forever) ---- */
+const ACH=[
+  {k:"reps",name:"Iron Arms",d:n=>`${fmt(n)} lifetime push-ups`,v:()=>S.totalReps,t:i=>nice(100*Math.pow(2.2,i))},
+  {k:"bosses",name:"Boss Slayer",d:n=>`Defeat ${n} bosses`,v:()=>S.boss,t:i=>i===0?1:3*Math.pow(2,i-1)},
+  {k:"session",name:"Marathon",d:n=>`${n} push-ups in one fight`,v:()=>S.bestSession,t:i=>[10,25,50,75,100][i]??100+50*(i-4)},
+  {k:"days",name:"Dedicated",d:n=>`Train on ${n} different days`,v:()=>Object.keys(S.days).length,t:i=>[3,7,14,30][i]??30*(i-2)},
+  {k:"streak",name:"On Fire",d:n=>`${n}-day quest streak`,v:()=>S.bestQStreak,t:i=>[3,7,14,30][i]??30*(i-2)},
+  {k:"crits",name:"Critical Master",d:n=>`${fmt(n)} critical hits`,v:()=>S.crits,t:i=>nice(10*Math.pow(2.5,i))},
+  {k:"chests",name:"Treasure Hunter",d:n=>`Open ${n} chests`,v:()=>S.chestsOpened,t:i=>[1,5,10,25][i]??25*(i-2)},
+  {k:"level",name:"Veteran",d:n=>`Reach level ${n}`,v:()=>S.level,t:i=>5*(i+1)},
+];
+const achTier=a=>S.ach[a.k]||0;
+const achReady=a=>a.v()>=a.t(achTier(a));
+function renderAwards(){
+  $("achList").innerHTML=ACH.map((a,i)=>{const tier=achTier(a),goal=a.t(tier),v=a.v(),ready=v>=goal;
+    return `<div class="item"><div class="art" style="font-size:34px">${["💪","⚔️","🏃","📅","🔥","💥","🎁","⭐"][i]}</div><div class="m">
+      <div class="t">${a.name} <span class="stars">TIER ${tier+1}</span></div><div class="d">${a.d(goal)}</div>
+      <div class="bar"><i style="width:${Math.min(100,v/goal*100)}%;${ready?"background:var(--gold)":""}"></i></div></div>
+      <button class="sbtn ${ready?"":"off"}" data-a="${i}">${ready?"CLAIM":fmt(v)+"/"+fmt(goal)}</button></div>`}).join("");
+}
+$("achList").onclick=e=>{const b=e.target.closest("[data-a]");if(!b)return;const a=ACH[+b.dataset.a];if(!achReady(a)){SFX.err();return}
+  const tier=achTier(a);const g=nice(bossAt(S.boss).worth*0.4*(1+tier*0.2));S.gems+=g;S.ach[a.k]=tier+1;addXP(100*(tier+1));
+  pushEvent({t:"ach",k:a.name,v:tier+1});SFX.buy();toast(`${a.name} tier ${tier+1} · +◆${fmt(g)}`);save();render();renderGems(true)};
+
+/* ---- pets (new species keep unlocking, levels forever) ---- */
+const PET_NAMES=["Pip","Mochi","Bolt","Ember","Nimbus","Fang","Glimmer","Bruno","Sprout","Zappy"];
+const petUnlock=s=>s<3?[1,4,8][s]:12*(s-2);
+const petDef=s=>({name:s<PET_NAMES.length?PET_NAMES[s]:seededName(s*91+7,2),hue:Math.floor(rng(s*53+1)()*360),unlock:petUnlock(s)});
+const petLv=s=>S.pets[s]||0;
+const petOne=s=>bladeDmg(petUnlock(s))*0.02;          // dmg/sec per level, before bonuses
+const petCost=s=>nice(bossHP(petUnlock(s))*0.3*Math.pow(1.45,petLv(s)));
+function petDps(){let t=0;for(const s in S.pets)t+=petOne(+s)*S.pets[s];return t*dmgMult()}
+function petSVG(s){const h=petDef(s).hue,b=`hsl(${h} 65% 60%)`,d=`hsl(${h} 55% 40%)`,t=s%3;
+  const ears=t===0?`<circle cx="26" cy="36" r="12" fill="${d}"/><circle cx="74" cy="36" r="12" fill="${d}"/>`:t===1?`<path d="M22 46 L28 14 L44 38Z" fill="${d}"/><path d="M78 46 L72 14 L56 38Z" fill="${d}"/>`:`<path d="M50 32 Q46 14 58 8" stroke="${d}" stroke-width="4" fill="none"/><circle cx="58" cy="8" r="6" fill="hsl(${(h+180)%360} 80% 65%)"/>`;
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${ears}<ellipse cx="50" cy="60" rx="34" ry="30" fill="${b}"/><ellipse cx="50" cy="72" rx="20" ry="12" fill="#fff" opacity=".25"/>
+    <circle cx="38" cy="56" r="6" fill="#111"/><circle cx="62" cy="56" r="6" fill="#111"/><circle cx="40" cy="54" r="2" fill="#fff"/><circle cx="64" cy="54" r="2" fill="#fff"/>
+    <ellipse cx="28" cy="66" rx="6" ry="4" fill="#ff8fa3" opacity=".6"/><ellipse cx="72" cy="66" rx="6" ry="4" fill="#ff8fa3" opacity=".6"/>
+    <path d="M45 66 Q50 71 55 66" stroke="#111" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="36" cy="89" rx="9" ry="5" fill="${d}"/><ellipse cx="64" cy="89" rx="9" ry="5" fill="${d}"/></svg>`}
+function visiblePets(){const out=[];for(let s=0;;s++){const u=petUnlock(s);if(u<=S.boss){out.push({s,locked:false});continue}
+  if(planetOf(u)<=planetOf(S.boss))out.push({s,locked:true});break}return out}
+function renderPets(){
+  $("petList").innerHTML=visiblePets().map(({s,locked})=>{const P=petDef(s),L=petLv(s),c=petCost(s);
+    if(locked)return `<div class="item dim"><div class="art" style="filter:brightness(0)">${petSVG(s)}</div><div class="m"><div class="t">???</div><div class="d">Beat ${bossAt(P.unlock-1).name} to unlock</div></div></div>`;
+    return `<div class="item"><div class="art">${petSVG(s)}</div><div class="m"><div class="t">${P.name} ${L?`<span class="stars">LV ${L}</span>`:""}</div>
+      <div class="d">${L?`${fmt(petOne(s)*L*dmgMult()*60)} dmg/min → ${fmt(petOne(s)*(L+1)*dmgMult()*60)}`:`Adopt: ${fmt(petOne(s)*dmgMult()*60)} dmg/min`}</div></div>
+      <button class="sbtn ${S.gems>=c?"":"off"}" data-p="${s}">${L?"LV UP":"ADOPT"}<br>◆${fmt(c)}</button></div>`}).join("");
+}
+$("petList").onclick=e=>{const b=e.target.closest("[data-p]");if(!b)return;const s=+b.dataset.p,c=petCost(s);
+  if(S.gems<c){SFX.err();toast(`Need ◆${fmt(c-S.gems)} more`);return}
+  S.gems-=c;const first=!S.pets[s];S.pets[s]=petLv(s)+1;qAdd("upgrade",1);if(first)pushEvent({t:"pet",s});
+  SFX.buy();toast(first?`${petDef(s).name} joined your team!`:`${petDef(s).name} → LV ${S.pets[s]}`);save();render();renderGems(true)};
+let petTimer=0;
+function renderFightPets(){const ps=Object.keys(S.pets).map(Number).sort((a,b)=>petOne(b)*S.pets[b]-petOne(a)*S.pets[a]).slice(0,3);$("fPets").innerHTML=ps.map(s=>`<div data-s="${s}">${petSVG(s)}</div>`).join("")}
+function petAttack(){
+  if(!fighting||!det.armed)return;const d=petDps()*2;if(d<=0)return;
+  const els=$("fPets").children;for(const el of els){el.classList.remove("hop");void el.offsetWidth;el.classList.add("hop")}
+  const p=document.createElement("div");p.className="dmgpop";p.style.fontSize="22px";p.style.color="var(--mint)";p.textContent="-"+fmt(d);
+  p.style.left="14%";p.style.top="48%";$("arena").appendChild(p);setTimeout(()=>p.remove(),800);
+  ses.dmg+=d;qAdd("dmg",d);const b=bossAt(S.boss);const r=applyDamage(d);
+  if(r.kills){ses.kills+=r.kills;ses.gems+=r.gems;bossDown(b,r.gems)}
+  renderFight();save();
+}
+
+/* ---- cosmetics: every planet has its own 6-item set, only from that planet's chest ---- */
+const RAR={common:{w:60,c:"#c8c3e6"},rare:{w:30,c:"#7ab8ff"},legendary:{w:10,c:"#ffd24a"}};
+const SET_LAYOUT=[["sword","common"],["sky","common"],["name","common"],["sword","rare"],["sky","rare"],["sword","legendary"]];
+const SK_A=["Frost","Ember","Toxic","Royal","Shadow","Neon","Coral","Storm","Lunar","Solar","Venom","Crystal","Rust","Blossom","Thunder","Ocean"];
+const SKY_A=["Dawn","Dusk","Aurora","Bloodmoon","Mint","Candy","Abyss","Golden Hour","Storm","Nebula","Ember","Glacier"];
+const NM_A=["Lime","Rose","Gold","Ice","Lava","Orchid","Mint","Peach","Electric","Sunset"];
+const _ci={};
+function cosItem(id){
+  if(_ci[id])return _ci[id];
+  const m=/^p(\d+)i(\d+)$/.exec(id);const p=+m[1],j=+m[2];const[type,rar]=SET_LAYOUT[j];const r=rng(p*1009+j*31+5);const h=Math.floor(r()*360);
+  const it={id,p,j,type,rar};
+  if(type==="sword"){const leg=rar==="legendary";it.name=leg?`${planetName(p)||"Origin"} Legend`:`${SK_A[Math.floor(r()*SK_A.length)]} Skin`;
+    it.skin={c1:`hsl(${h} 80% ${leg?80:75}%)`,c2:`hsl(${h} 70% ${leg?60:55}%)`,g:`hsl(${(h+(leg?150:40))%360} 85% 58%)`,legend:leg}}
+  else if(type==="sky"){it.name=`${SKY_A[Math.floor(r()*SKY_A.length)]} Sky`;const h2=(h+60+Math.floor(r()*120))%360,dark=rar==="rare";
+    it.pal={s1:`hsl(${h} ${dark?60:65}% ${dark?40:82}%)`,s2:`hsl(${h} 50% ${dark?28:62}%)`,s3:`hsl(${h} 45% ${dark?18:48}%)`,h1:`hsl(${h2} 35% ${dark?28:50}%)`,h2:`hsl(${h2} 35% ${dark?22:40}%)`,h3:`hsl(${h2} 38% ${dark?16:32}%)`,h4:`hsl(${h2} 40% ${dark?11:22}%)`,tr:`hsl(${h2} 40% 9%)`,moon:`hsl(${(h+180)%360} 80% 85%)`,moons:1+Math.floor(r()*3),ring:r()<.5}}
+  else{it.name=`${NM_A[Math.floor(r()*NM_A.length)]} Name`;it.color=`hsl(${h} 90% 68%)`}
+  return _ci[id]=it;
+}
+const setIds=p=>SET_LAYOUT.map((_,j)=>`p${p}i${j}`);
+const ownedIn=p=>setIds(p).filter(id=>S.cos[id]).length;
+function completedSets(){let n=0;for(let p=0;p<=planetOf(S.boss);p++)if(ownedIn(p)===SET_LAYOUT.length)n++;return n}
+const chestCost=p=>nice(bossHP(p*PER_PLANET+3));
+function cosPreview(it){
+  if(it.type==="sword")return sword(3,50,it.skin);
+  if(it.type==="sky"){const P=it.pal;return `<svg viewBox="0 0 60 60"><defs><linearGradient id="g${it.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.s1}"/><stop offset="1" stop-color="${P.s3}"/></linearGradient></defs><rect width="60" height="60" rx="10" fill="url(#g${it.id})"/><circle cx="42" cy="16" r="7" fill="${P.moon}"/><path d="M0 42 Q20 32 36 40 T60 36 V60 H0Z" fill="${P.h2}"/><path d="M0 50 Q25 44 60 50 V60 H0Z" fill="${P.h4}"/></svg>`}
+  return `<svg viewBox="0 0 60 60"><text x="30" y="40" text-anchor="middle" font-family="Rubik" font-weight="900" font-size="26" fill="${it.color}">Aa</text></svg>`;
+}
+function chestSVG(p){const h=p?Math.floor(rng(p*4241+9)()*360):40;const c=`hsl(${h} 60% 45%)`,d=`hsl(${h} 60% 30%)`;
+  return `<svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="44" width="92" height="50" rx="8" fill="${c}"/><path d="M14 46 Q14 14 60 14 Q106 14 106 46Z" fill="${d}"/>
+    <rect x="14" y="40" width="92" height="10" fill="#f5b85a"/><rect x="52" y="34" width="16" height="22" rx="4" fill="#f5b85a"/><circle cx="60" cy="46" r="3" fill="#3b2400"/>
+    <rect x="28" y="14" width="8" height="80" fill="#f5b85a" opacity=".6"/><rect x="84" y="14" width="8" height="80" fill="#f5b85a" opacity=".6"/></svg>`}
+function renderChests(){
+  $("keyRow").innerHTML=`🔑 ${S.keys} KEY${S.keys===1?"":"S"} <span style="color:var(--muted);font-size:12px;letter-spacing:1px">· from quests, levels & races</span>`;
+  let h="";
+  for(let p=planetOf(S.boss);p>=0;p--){
+    const ids=setIds(p),own=ownedIn(p),done=own===ids.length,c=chestCost(p);
+    h+=`<div class="chest">${chestSVG(p)}<div class="ct">${p?planetName(p).toUpperCase():"ORIGIN"} CHEST</div>
+      <div class="cs">${done?"SET COMPLETE ✓ · +25% DAMAGE FOREVER":`${own}/${ids.length} COLLECTED · COMPLETE THE SET FOR +25% DMG`}</div>
+      <div class="setgrid">${ids.map(id=>{const it=cosItem(id);return S.cos[id]?`<div style="border-color:${RAR[it.rar].c}">${cosPreview(it)}</div>`:`<div style="border-color:${RAR[it.rar].c}55">?</div>`}).join("")}</div>
+      ${done?"":`<div class="btns"><button class="sbtn ${S.gems>=c?"":"off"}" data-open="${p}" data-pay="gems">OPEN · ◆${fmt(c)}</button><button class="sbtn mint ${S.keys?"":"off"}" data-open="${p}" data-pay="key">USE 🔑</button></div>`}
+    </div>`;
+  }
+  $("chestList").innerHTML=h;
+}
+$("chestList").onclick=e=>{const b=e.target.closest("[data-open]");if(!b)return;const p=+b.dataset.open,pay=b.dataset.pay,c=chestCost(p);
+  if(pay==="gems"&&S.gems<c){SFX.err();toast(`Need ◆${fmt(c-S.gems)} more`);return}
+  if(pay==="key"&&S.keys<1){SFX.err();toast("No keys: finish daily quests to earn them");return}
+  if(pay==="gems")S.gems-=c;else S.keys--;
+  // roll rarity, then item
+  const roll=Math.random()*100;const rar=roll<RAR.legendary.w?"legendary":roll<RAR.legendary.w+RAR.rare.w?"rare":"common";
+  const pool=setIds(p).filter(id=>cosItem(id).rar===rar);const id=pool[Math.floor(Math.random()*pool.length)];const it=cosItem(id);
+  const dup=!!S.cos[id];let refund=0;if(dup){refund=nice(c*0.5);S.gems+=refund}else S.cos[id]=true;
+  S.chestsOpened++;if(!dup&&rar!=="common")pushEvent({t:"cos",id});
+  const setDone=!dup&&ownedIn(p)===SET_LAYOUT.length;if(setDone)pushEvent({t:"set",p});
+  save();
+  modal(`<div class="chestanim" style="width:140px;margin:10px auto">${chestSVG(p)}</div><div class="sub">Opening…</div>`);
+  SFX.tick();setTimeout(()=>SFX.tick(),300);setTimeout(()=>SFX.tick(),600);
+  setTimeout(()=>{(rar==="legendary"?SFX.kill:SFX.buy)();
+    modal(`<div class="sub r-${rar}" style="letter-spacing:4px;font-weight:900">${rar.toUpperCase()}</div>
+      <div class="burst reveal" style="--rc:${RAR[rar].c}88;margin:16px auto;width:150px;height:150px;display:flex;align-items:center;justify-content:center">${cosPreview(it).replace("<svg",'<svg class="big"')}</div>
+      <h3 class="r-${rar}">${it.name.toUpperCase()}</h3><div class="sub">${{sword:"Sword skin",sky:"Sky theme",name:"Leaderboard name color"}[it.type]}${dup?` · DUPLICATE · +◆${fmt(refund)}`:""}</div>
+      ${setDone?`<div class="sub" style="color:var(--gold);margin-top:8px">SET COMPLETE! +25% damage forever</div>`:""}
+      ${dup?"":`<button class="btn" id="eq">EQUIP</button>`}<button class="btn dim" id="cl">${dup?"OK":"LATER"}</button>`,s=>{
+      s.querySelector("#cl").onclick=()=>{close();render()};
+      const q=s.querySelector("#eq");if(q)q.onclick=()=>{S.equip[it.type]=id;landW=-1;save();close();render();sync()};
+    })},1000);
+};
+function renderLocker(){
+  const owned=Object.keys(S.cos).filter(k=>S.cos[k]).map(cosItem);
+  const sec=(type,label)=>{const its=owned.filter(i=>i.type===type);
+    return `<div class="lsec">${label}</div><div class="lgrid"><button data-eq="${type}" data-id="" class="${!S.equip[type]?"on":""}"><div class="pv">${type==="sword"?sword(S.equipped,50):type==="sky"?`<div style="font-size:32px">🌄</div>`:`<div style="font-size:26px;font-weight:900">Aa</div>`}</div><span>Default</span></button>
+      ${its.map(i=>`<button data-eq="${type}" data-id="${i.id}" class="${S.equip[type]===i.id?"on":""}"><div class="pv">${cosPreview(i)}</div><span class="r-${i.rar}">${i.name}</span></button>`).join("")}</div>`};
+  $("locker").innerHTML=(owned.length?"":`<p class="note" style="margin:4px">Nothing yet. Open chests to collect sword skins, skies and name colors.</p>`)+sec("sword","SWORD SKIN")+sec("sky","SKY")+sec("name","NAME COLOR");
+}
+$("locker").onclick=e=>{const b=e.target.closest("[data-eq]");if(!b)return;S.equip[b.dataset.eq]=b.dataset.id||null;landW=-1;save();SFX.tick();render();sync()};
+$("stabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+  $("stabs").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+  ["pets","chests","locker"].forEach(p=>$("s-"+p).classList.toggle("hidden",p!==b.dataset.p));SFX.tick()};
+function renderShop(){renderPets();renderChests();renderLocker()}
+
+/* ---- dots ---- */
+function renderDots(){
+  if(S.q)$("qDot").classList.toggle("hidden",!S.q.list.some(q=>!q.c&&q.p>=q.n));
+  $("progDot").classList.toggle("hidden",!ACH.some(achReady)&&!raceClaimable());
+  const petAff=visiblePets().some(({s,locked})=>!locked&&S.gems>=petCost(s));
+  $("shopDot").classList.toggle("hidden",!(S.keys>0||petAff));
+}
+
+/* ---- rivalry: weekly race + activity feed ---- */
+function sumFrom(days,start){let t=0;for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);t+=days[dayKey(d)]||0}return t}
+const lastWeekStart=()=>{const w=weekStart();w.setDate(w.getDate()-7);return w};
+let lastList=[];
+function raceResult(){
+  const me=lastList.find(p=>p.id===S.id),rv=lastList.find(p=>p.id!==S.id);if(!me||!rv)return null;
+  const lw=lastWeekStart();const a=sumFrom(S.days,lw),b=sumFrom(rv.days||{},lw);return{a,b,rv,key:dayKey(lw)};
+}
+function raceClaimable(){const r=raceResult();return !!(r&&r.a>0&&r.a>=r.b&&S.raceClaimed!==r.key)}
+function nameStyle(p){const c=p.id===S.id?(S.equip.name?cosItem(S.equip.name).color:null):(p.extra||{}).color;return c?`color:${c}`:""}
+function ago(ts){const m=Math.floor((Date.now()-ts)/60000);if(m<1)return"now";if(m<60)return m+"m ago";const h=Math.floor(m/60);if(h<24)return h+"h ago";return Math.floor(h/24)+"d ago"}
+function describe(e,who){
+  const myP=planetOf(S.boss);
+  switch(e.t){
+    case"boss":return planetOf(e.g)>myP?`${who} beat a mystery boss 👀`:`${who} beat <b>${bossAt(e.g).name}</b>`;
+    case"sword":return e.i>S.owned+2?`${who} forged a mystery sword 👀`:`${who} unlocked <b>${blade(e.i).name}</b>`;
+    case"lvl":return`${who} reached <b>level ${e.v}</b>`;
+    case"cos":{const it=cosItem(e.id);return it.p>myP?`${who} pulled a mystery item 👀`:`${who} pulled <b class="r-${it.rar}">${it.rar.toUpperCase()} ${it.name}</b>`}
+    case"set":return e.p>myP?`${who} completed a mystery set 👀`:`${who} completed the <b>${e.p?planetName(e.p):"Origin"} set</b> 🏆`;
+    case"quest":return`${who} finished today's quests 🔥${e.v}`;
+    case"ach":return`${who} earned <b>${e.k}</b> tier ${e.v}`;
+    case"pet":return`${who} adopted a pet`;
+    case"race":return`${who} won the weekly race 🏆`;
+  }return"";
+}
+function renderRivalry(list){
+  lastList=list;
+  const me=list.find(p=>p.id===S.id),rv=list.find(p=>p.id!==S.id);
+  const ws=weekStart(),end=new Date(ws);end.setDate(ws.getDate()+7);const left=end-new Date(),dl=Math.floor(left/86400000),hl=Math.floor(left/3600000)%24;
+  const a=me.week,b=rv?rv.week:0,mx=Math.max(a,b,1);
+  $("raceCard").innerHTML=`<div class="rt">WEEKLY RACE<span>ENDS IN ${dl}d ${hl}h</span></div>
+    <div class="lane"><span class="nm" style="${nameStyle(me)}">${esc(me.name)}</span><div class="tr"><i style="width:${a/mx*100}%;background:var(--mint)"></i></div><b>${fmt(a)}</b></div>
+    ${rv?`<div class="lane"><span class="nm" style="${nameStyle(rv)}">${esc(rv.name)}</span><div class="tr"><i style="width:${b/mx*100}%;background:var(--orange)"></i></div><b>${fmt(b)}</b></div>`:`<div class="sub" style="margin-top:10px;font-size:13px">Waiting for your rival to join…</div>`}
+    <div class="sub" style="font-size:12px;margin-top:10px">Most push-ups Mon–Sun wins 2 🔑 + crystals.</div>`;
+  const r=raceResult();
+  $("raceClaim").innerHTML=r&&(r.a||r.b)?(raceClaimable()?`<div class="item" style="border-color:var(--gold)"><div class="art" style="font-size:36px">🏆</div><div class="m"><div class="t">YOU WON LAST WEEK</div><div class="d">${r.a} vs ${r.b}</div></div><button class="sbtn" id="raceBtn">CLAIM</button></div>`
+    :S.raceClaimed===r.key?"":r.b>r.a?`<div class="item dim"><div class="art" style="font-size:36px">😤</div><div class="m"><div class="t">${esc(r.rv.name)} won last week</div><div class="d">${r.b} vs ${r.a}. Get it back this week.</div></div></div>`:""):"";
+  const rb=$("raceBtn");if(rb)rb.onclick=()=>{const g=nice(bossAt(S.boss).worth*1.5);S.keys+=2;S.gems+=g;S.raceClaimed=r.key;pushEvent({t:"race"});SFX.kill();toast(`+2 🔑 · +◆${fmt(g)}`);save();render();sync()};
+  const evs=[];for(const p of list){const ev=p.id===S.id?S.events:((p.extra||{}).events||[]);for(const e of ev)evs.push({e,p})}
+  evs.sort((x,y)=>y.e.ts-x.e.ts);
+  $("feed").innerHTML=evs.slice(0,25).map(({e,p})=>`<div>${describe(e,`<span style="font-weight:900;${nameStyle(p)}">${p.id===S.id?"You":esc(p.name)}</span>`)}<small>${ago(e.ts)}</small></div>`).join("")||`<div class="note">Nothing yet. Go fight something.</div>`;
+}
+
+/* stop iOS from dragging the whole page around */
+document.addEventListener("touchmove",e=>{const sc=e.target.closest(".screen:not(#boss)");if(!sc||sc.scrollHeight<=sc.clientHeight)e.preventDefault()},{passive:false});
+
+/* ============ BOOT ============ */
+document.querySelectorAll(".gemic").forEach(e=>e.innerHTML=GEM);
+if(!(S.bossHp>0)||S.bossHp>bossAt(S.boss).hp)S.bossHp=bossAt(S.boss).hp;
+$("forgeArt").innerHTML=FORGE;$("mineArt").innerHTML=MINE;
+const away=tickIdle();save();render();
+if(!S.name)askName();
+else{
+  sync();
+  if(checkPlanet()){}else if(away.act>30&&(away.dmg>=1||away.gems>=1))modal(`<h3>WELCOME BACK</h3><div class="sub">Your battery ran for <b style="color:#fff">${dur(away.act)}</b> while you were gone</div>
+    <div class="stats2"><div><b>${fmt(away.dmg)}</b><span>FORGE DMG</span></div><div><b style="color:var(--sky)">${fmt(away.gems)}</b><span>MINED ◆</span></div>${away.kills?`<div><b style="color:var(--gold)">${away.kills}</b><span>BOSSES</span></div>`:""}</div>
+    <button class="btn" id="cl">COLLECT</button>`,s=>s.querySelector("#cl").onclick=()=>{close();SFX.buy();renderGems(true)});
+}
+setInterval(()=>{const r=tickIdle();save();if(!fighting){renderGems();renderBoss();if(r.kills&&!checkPlanet())toast("Your forge took down a boss!")}else renderFight()},2000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){tickIdle();save();render();pull()}});
+</script>
+</body>
+</html>
